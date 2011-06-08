@@ -5,9 +5,9 @@ require "bundler"
 Gem::Specification.new do |s|
 	s.name = "pa"
 	s.version = Pa::VERSION::IS
-	s.summary = "a good lib"
+	s.summary = "a path library for Ruby"
 	s.description = <<-EOF
-a good lib
+a path library for Ruby
 	EOF
 
 	s.author = "Guten"

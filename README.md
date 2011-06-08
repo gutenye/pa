@@ -10,10 +10,12 @@ Pa, a path libraray for Ruby
 Overview
 --------
 
-An Introduction to Pa 
----------------------
+	a path library for Ruby
 
-	require "tagen/core"
+Usage
+-----
+
+	require "pa"
 	pa = Pa('/home/foo')
 	pa.exists? #=> false
 	pa.dir #=> '/home'
@@ -23,15 +25,11 @@ An Introduction to Pa
 
 	Pa.exists?('/home/foo') # alternate way
 
-which rspec
+used with rspec
 
 	Pa('/home/foo').should be_exists
 
 more see API doc
-
-Usage
------
-
 
 Contributing
 -------------
@@ -46,11 +44,6 @@ Install
 ----------
 
 	gem install pa
-
-Resources
----------
-
-	some related resources to help each other.
 
 Copyright
 ---------
