@@ -1,7 +1,4 @@
-require_relative "pa/core"
-
-require "bundler/setup"
-Bundler.require
+require "tagen/core"
 
 =begin rdoc
 Pa(Path) is similary to Pathname, but more powerful.
