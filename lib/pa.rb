@@ -75,10 +75,6 @@ class Pa
 		initialize_variables
 	end
 
-	def ok
-		initialize_variables
-	end
-
 	chainable = Module.new do
 		def initialize_variables; end
 	end
@@ -127,6 +123,19 @@ class Pa
 
 	end
 
+	def <=> other
+		other_path = nil
+		other_path = 
+			if other.respond_to?(:path) 
+			 other.path
+			elsif String === other
+				other
+			else
+				raise Error, "not support type -- #{other.class}"
+			end
+
+		path <=> other_path 
+	end
 
 end
 

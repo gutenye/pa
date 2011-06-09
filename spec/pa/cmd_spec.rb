@@ -128,7 +128,7 @@ describe Pa do
 		end
 
 		it "_copy file" do
-			Pa._copy 'a', 'b', verbose: true
+			Pa._copy 'a', 'b'
 			File.exists?('b').should be_true
 		end
 
