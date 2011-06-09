@@ -4,7 +4,7 @@ require "tmpdir"
 
 class Pa
 	class << self
-	public :_copy, :_move, :_rmdir, :_mktmpname, :_mkdir, :_touch
+		public :_copy, :_move, :_rmdir, :_mktmpname, :_mkdir, :_touch
 	end
 end
 

@@ -4,7 +4,6 @@ describe Pa do
 	describe "#test" do
 		it "runs ok" do
 			pa = Pa('/home/guten/')
-			pd 'test: ', pa, pa.ok
 		end
 	end
 

@@ -293,7 +293,6 @@ module ClassMethods::Cmd
 	def _copy(src, dest, o={})  
 		raise Errno::EEXIST, "dest exists -- #{dest}" if File.exists?(dest) and (not o[:force])
 
-
 		case type=File.ftype(src)
 
 		when "file", "socket"

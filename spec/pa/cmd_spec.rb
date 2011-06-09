@@ -2,14 +2,10 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-describe Pa do
-	it "a" do
-		Pa._copy 'a','b'
-	end
+module Pa::ClassMethods::Cmd
+	public :_copy, :_touch, :_mkdir, :_mktmpname, :_rmdir, :_copy, :_move
 end
 
-
-=begin
 describe Pa do
 	before :all do
 		@curdir = Dir.pwd
@@ -86,8 +82,6 @@ describe Pa do
 				File.exists?("dir").should be_false
 			end
 		end
-
-
 
 		describe "#rm_if" do
 			it "remove if condition" do
@@ -187,7 +181,8 @@ describe Pa do
 
 		it "_copy with :normal" do
 			Pa._copy 'dir', 'dir_normal', special: true
-			Dir.empty?('dir_normal').should be_true
+			dir_empty = (Dir.entries('dir_normal').length==2)
+			dir_empty.should be_true
 		end
 
 	end
@@ -275,4 +270,3 @@ describe Pa do
 	end
 
 end
-=end
