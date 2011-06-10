@@ -15,6 +15,8 @@ Examples:
 	pa.ext  	#=> 'vim'
 	pa.fext		#=> '.vim'
 
+	pa.dir_pa #=> Pa('/home')  # similar, but return <#Pa>
+
 Filename parts:
 ---------
 	/home/guten.ogg

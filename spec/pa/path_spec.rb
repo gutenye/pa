@@ -137,5 +137,10 @@ describe Pa do
 		end
 	end
 
+	describe "#dir_pa" do
+		it "return Pa instance" do
+			Pa('/home/guten').dir_pa.should be_an_instance_of(Pa)
+		end
+	end
 
 end

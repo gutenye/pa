@@ -229,7 +229,15 @@ attribute absolute and dir return String, method absolute_path(), dirname() retu
 =end
 module Path
 	# @return [String] 
-	attr_reader :absolute, :dir, :base, :name, :ext, :fext, :short
+	attr_reader :absolute, :dir, :base, :name, :short
+
+	# @return [String] ext "", "ogg"
+	attr_reader :ext
+
+	# @return [String] ext "", ".ogg"
+	attr_reader :fext
+
+	attr_reader :absolute_pa, :dir_pa, :base_pa, :name_pa, :ext_pa, :fext_pa, :short_pa
 
 	def initialize_variables
 		super
@@ -241,6 +249,14 @@ module Path
 		@fext = @ext.empty? ? "" : "."+@ext
 	end
 
+	def absolute_pa; @absolute_pa ||= Pa(@absolute) end
+	def dir_pa; @dir_pa ||= Pa(@dir) end
+	def base_pa; @base_pa ||= Pa(@base) end
+	def name_pa; @name_pa ||= Pa(@name) end
+	def ext_pa; @ext_pa ||= Pa(@ext) end
+	def fext_pa; @fext_pa ||= Pa(@fext) end
+	def short_pa; @short_pa ||= Pa(@short) end
+
 	alias a absolute
 	alias d dir
 	alias	b base
@@ -249,6 +265,15 @@ module Path
 	alias fn fname
 	alias e ext
 	alias fe fext
+
+	alias a_pa absolute_pa
+	alias d_pa dir_pa
+	alias	b_pa base_pa
+	alias n_pa name_pa
+	alias fname_pa base_pa
+	alias fn_pa fname_pa
+	alias e_pa ext_pa
+	alias fe_pa fext_pa
 
 	def short
 		@short ||= Pa.shorten(@path) 

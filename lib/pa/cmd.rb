@@ -335,6 +335,23 @@ module ClassMethods::Cmd
 	end # _copy
 	private :_copy
 
+	# a rename util 
+	#
+	# @example
+	#
+	#   Pa.rename('/home/guten.jpg') {|pa| pa.name+'_1'+pa.fext} # => '/home/guten_1.jpg'
+	#   Pa('/home/guten.jpg').rename {|pa| pa.name+'_1'+pa.fext} # => <#Pa('/home/guten_1.jpg')>
+	#
+	# @param [String,Pa] src
+	# @yieldparam [Pa] pa 
+	# @yieldreturn [String] fname 
+	# @return [String,Pa] # Pa.rename return String. Pa#rename return Pa.
+	def rename src, &blk
+		src = Pa(src)
+		fname = blk.call(src)
+		src.dir_pa.join(fname).path
+	end
+
 	# move, use rename for same device. and cp for cross device.
 	# @see cp
 	#

@@ -1,6 +1,5 @@
 $: << "."
 require "version"
-require "bundler"
 
 Gem::Specification.new do |s|
 	s.name = "pa"
@@ -17,6 +16,5 @@ a path library for Ruby
 
 	s.files = `git ls-files`.split("\n")
 
-	s.add_bundler_dependencies
-	#s.add_dependency "x"
+	s.add_dependency "tagen", "~>1.0.0"
 end

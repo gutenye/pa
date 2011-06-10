@@ -1,6 +1,5 @@
 class Pa
 module ClassMethods::State
-
 	# @see File.chmod
 	def chmod(mode, *paths) paths.map!{|v|get(v)}; File.chmod(mode, *paths) end
 
@@ -15,7 +14,6 @@ module ClassMethods::State
 
 	# @see File.utime
 	def utime(atime, mtime, *paths) paths.map!{|v|get(v)}; File.utime(atime, mtime, *paths) end
-
 
 	# get file type
 	#
@@ -36,7 +34,6 @@ module ClassMethods::State
 			t
 		end
 	end # def type
-
 
 	# is path a mountpoint?
 	#
