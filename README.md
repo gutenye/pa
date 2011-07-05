@@ -1,11 +1,11 @@
 Pa, a path libraray for Ruby
 ========================
 
-**Homepage**: [https://github.com/GutenLinux/pa](https://github.com/GutenLinux/pa) <br/>
+**Homepage**: [https://github.com/GutenYe/pa](https://github.com/GutenYe/pa) <br/>
 **Author**:	Guten <br/>
 **License**: MIT-LICENSE <br/>
 **Documentation**: [http://rubydoc.info/gems/pa/frames](http://rubydoc.info/gems/pa/frames) <br/>
-**Issue Tracker**: [https://github.com/GutenLinux/pa/issues](https://github.com/GutenLinux/pa/issues) <br/>
+**Issue Tracker**: [https://github.com/GutenYe/pa/issues](https://github.com/GutenYe/pa/issues) <br/>
 
 Overview
 --------

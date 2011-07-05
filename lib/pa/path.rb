@@ -279,14 +279,6 @@ module Path
 		@short ||= Pa.shorten(@path) 
 	end
 
-	# @return [Pa] absolute path
-	def absolute2() @absolute2 ||= Pa(absolute) end
-
-	# @return [Pa] dirname
-	# @example
-	#   Pa(__FILE__).dirname.join('.opts')
-	def dir2() @dir2 ||= Pa(dir) end
-
 	# add string to path
 	# 
 	# @example 

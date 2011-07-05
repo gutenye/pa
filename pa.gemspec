@@ -11,7 +11,7 @@ a path library for Ruby
 
 	s.author = "Guten"
 	s.email = "ywzhaifei@Gmail.com"
-	s.homepage = "http://github.com/GutenLinux/pa"
+	s.homepage = "http://github.com/GutenYe/pa"
 	s.rubyforge_project = "xx"
 
 	s.files = `git ls-files`.split("\n")
