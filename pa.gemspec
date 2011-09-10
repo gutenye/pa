@@ -15,6 +15,4 @@ a path library for Ruby
 	s.rubyforge_project = "xx"
 
 	s.files = `git ls-files`.split("\n")
-
-	#s.add_dependency "tagen", "~>1.0.0"
 end
