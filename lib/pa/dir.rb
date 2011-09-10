@@ -21,7 +21,7 @@
 =end
 class Pa
   module Dir
-    extend ActiveSupport::Concern
+    extend Util::Concern
 
     module ClassMethods
       # path globbing, exclude '.' '..' for :dotmatch

@@ -1,6 +1,3 @@
-require "active_support/concern"
-require "active_support/core_ext/array/wrap"
-
 =begin rdoc
 Pa(Path) is similary to Pathname, but more powerful.
 it combines fileutils, tmpdir, find, tempfile, File, Dir, Pathname

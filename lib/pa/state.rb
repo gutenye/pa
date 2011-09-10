@@ -1,6 +1,6 @@
 class Pa
   module State
-    extend ActiveSupport::Concern
+    extend Util::Concern
     module ClassMethods
       # goes to File
       [ :exists?, :atime, :ctime, :mtime, :stat, :lstat, :size, :zero?, :executable?, :executable_real?, :world_executable?, :readable?, :readable_real?, :world_readalbe?, :writeable?, :writeable_real?, :world_writeable?, :directory?, :file?, :blockdev?, :chardev?, :piple?, :socket?, :symlink?, :dangling?, :owned?, :grpowned?, :setgid?, :setuid?, :stricky?, :identical? ].each do |name|

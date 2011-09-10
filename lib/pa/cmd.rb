@@ -10,7 +10,7 @@ rm family
 =end
 class Pa
   module Cmd
-    extend ActiveSupport::Concern
+    extend Util::Concern
     module ClassMethods
       # link
       #
@@ -267,7 +267,7 @@ class Pa
       #   @yield [src,dest,o]
       #   @return [nil]
       def cp(src_s, dest, o={}, &blk)
-        srcs = glob(*Array.wrap(src_s)).map{|v| v.path}
+        srcs = glob(*Util.wrap_array(src_s)).map{|v| v.path}
         dest = Pa.get(dest)
 
         if o[:mkdir] and (not File.exists?(dest))
@@ -323,7 +323,7 @@ class Pa
       # @option o [Boolean] :fore
       # @return [nil]
       def mv(src_s, dest, o={}, &blk)
-        srcs = glob(*Array.wrap(src_s)).map{|v| get(v)}
+        srcs = glob(*Util.wrap_array(src_s)).map{|v| get(v)}
         dest = get(dest)
 
         if o[:mkdir] and (not File.exists?(dest))
@@ -405,7 +405,7 @@ class Pa
         # @param [String,#path] dest
         def _ln(method, src_s, dest, o={})
           dest = get(dest)
-          glob(*Array.wrap(src_s)) {|src|
+          glob(*Util.wrap_array(src_s)) {|src|
             src = get(src)
             dest = File.join(dest, File.basename(src)) if File.directory?(dest)
             Pa.rm_r(dest) if o[:force] and File.exists?(dest)

@@ -14,7 +14,7 @@ attribute absolute and dir return String, method absolute_path(), dirname() retu
 class Pa
 	NAME_EXT_PAT = /^(.+?)(?:\.([^.]+))?$/
   module Path
-    extend ActiveSupport::Concern
+    extend Util::Concern
     module ClassMethods
       # get path of an object. 
       #
@@ -117,7 +117,7 @@ class Pa
       # @return [Array<String>] 
       def split2(name, o={})
         dir, fname = File.split(get(name))
-        ret = Array.wrap(basename(fname, o))
+        ret = Util.wrap_array(basename(fname, o))
 
         if o[:all]
           loop do
