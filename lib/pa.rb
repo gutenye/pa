@@ -1,4 +1,5 @@
-require "tagen/core"
+require "active_support/concern"
+require "active_support/core_ext/array/wrap"
 
 =begin rdoc
 Pa(Path) is similary to Pathname, but more powerful.
@@ -66,13 +67,37 @@ Example3:
 
 =end
 class Pa 
+  autoload :Util,    "pa/util"
+  autoload :VERSION, "pa/version" 
+
 	Error = Class.new Exception
 	EUnkonwType = Class.new Error
 
+  class << self
+    def method_missing(name, *args, &blk)
+      # dir -> dir2
+      name2 = "#{name}2".to_sym
+      if public_methods.include?(name2)
+        ret = __send__(name2, *args)
+        return case ret
+        when Array
+          ret.map{|v| Pa(v)}
+        when String
+          Pa(ret)
+        end
+      end
+
+      raise NoMethodError, "no method -- #{name}"
+    end
+  end
+
 	attr_reader :path
+	alias p path
+  alias path2 path
+  alias p2 path
 
 	# @param [String,#path] path
-	def initialize path
+	def initialize(path)
 		@path = path.respond_to?(:path) ? path.path : path
 		initialize_variables
 	end
@@ -82,11 +107,9 @@ class Pa
 	end
 	include chainable
 
-	alias p path
-
 	# @param [String,#path]
 	# @return [Pa] the same Pa object
-	def replace path
+	def replace(path)
 		@path = path.respond_to?(:path) ? path.path : path
 		initialize_variables
 	end
@@ -113,11 +136,9 @@ class Pa
 		ret = self.class.__send__(name, path, *args, &blk)
 
 		case ret	
-
 		# e.g. readlink ..
 		when String
 			Pa(ret)
-
 		# e.g. directory? 
 		else
 			ret
@@ -126,9 +147,7 @@ class Pa
 	end
 
 	def <=> other
-		other_path = nil
-		other_path = 
-			if other.respond_to?(:path) 
+		other_path = if other.respond_to?(:path) 
 			 other.path
 			elsif String === other
 				other
@@ -138,36 +157,19 @@ class Pa
 
 		path <=> other_path 
 	end
-
 end
 
+require "pa/path"
+require "pa/cmd"
+require "pa/dir"
+require "pa/state"
 class Pa
-module ClassMethods
-	UNDEFS = [:open, :fstat]
-
-	# missing method goes to File class method
-	def method_missing name, *args, &blk
-		raise NoMethodError, name.inspect if UNDEFS.include?(name)
-		return if args.size>1 
-		File.__send__ name, get(args[0]), &blk
-	end
-end
-end
-
-require_relative "pa/path"
-require_relative "pa/cmd"
-require_relative "pa/dir"
-require_relative "pa/state"
-class Pa
-  extend ClassMethods
-  extend ClassMethods::Path
-  extend ClassMethods::Dir
-  extend ClassMethods::State
-  extend ClassMethods::Cmd
-
   include Path
+  include Dir
   include State
+  include Cmd
 end
+
 
 module Kernel
 private
@@ -180,4 +182,3 @@ private
 		Pa.new path
 	end
 end
-

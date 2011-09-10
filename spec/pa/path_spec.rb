@@ -1,39 +1,26 @@
 require "spec_helper"
 
 describe Pa do
-	describe "#test" do
-		it "runs ok" do
-			pa = Pa('/home/guten/')
-		end
-	end
+  context "dir and dir2" do
+    it "#dir => Pa" do
+      Pa.dir("/home/guten").should be_an_instance_of Pa
+    end
 
-	describe "#dir2" do
-		it "runs ok" do
-			Pa('/home/foo').dir2.should be_an_instance_of Pa
-		end
-	end
+    it "#dir2 => Pa" do
+      Pa.dir2("/home/guten").should be_an_instance_of String
+    end
 
-	describe "#absoulte2" do
-		it "runs ok" do
-			Pa('.').absolute2.should be_an_instance_of Pa
-		end
-	end
+  end
 
-	describe "pwd2" do
-		it "runs ok" do
-			Pa.pwd2.should be_an_instance_of Pa
-		end
-	end
-
-	describe ".shorten" do
+	describe ".shorten2" do
 		it "short /home/usr/file into ~/file" do
 			ENV["HOME"] = "/home/foo"
-			Pa.shorten("/home/foo/file").should == "~/file"
+			Pa.shorten2("/home/foo/file").should == "~/file"
 		end
 
 		it "not short /home/other-user/file" do
 			ENV["HOME"] = "/home/foo"
-			Pa.shorten("/home/bar/file").should == "/home/bar/file"
+			Pa.shorten2("/home/bar/file").should == "/home/bar/file"
 		end
 	end
 
@@ -48,31 +35,26 @@ describe Pa do
 
 	end
 
-	describe "basename" do
-		it "get a basename of a path" do
-			Pa.basename("/home/foo").should == "foo"
-		end
-
+	describe ".base2" do
 		it "get name, ext with :ext => true" do
-			Pa.basename("/home/foo.bar", ext: true).should == ["foo", "bar"]
+			Pa.base2("/home/foo.bar", ext: true).should == ["foo", "bar"]
 		end
-
 	end
-	
-	describe '.parent' do
+
+	describe '.parent2' do
 		before :each do
 			@path = "/home/foo/a.txt"
 		end
 
 		it "return parent path" do
-			Pa.parent(@path).should == "/home/foo"
+			Pa.parent2(@path).should == "/home/foo"
 		end
 
 		it "return parent upto 2 level path" do
-			Pa.parent(@path, 2).should == "/home"
+			Pa.parent2(@path, 2).should == "/home"
 		end
 	end
-
+	
 	describe "#==" do
 		it "runs ok" do
 			(Pa('/home') == Pa('/home')).should be_true
@@ -85,9 +67,9 @@ describe Pa do
 		end
 	end
 
-	describe "#sub" do
+	describe "#sub2" do
 		it "runs ok" do
-			Pa('/home/foo').sub(/o/,'').should == Pa('/hme/foo')
+			Pa('/home/foo').sub2(/o/,'').should == '/hme/foo'
 		end
 	end
 
@@ -99,9 +81,9 @@ describe Pa do
 		end
 	end
 
-	describe "#gsub" do
+	describe "#gsub2" do
 		it "runs ok" do
-			Pa('/home/foo').gsub(/o/,'').should == Pa('/hme/f')
+			Pa('/home/foo').gsub2(/o/,'').should == '/hme/f'
 		end
 	end
 
@@ -136,11 +118,4 @@ describe Pa do
 			(Pa('/home/foo') =~ /foo/).should be_true
 		end
 	end
-
-	describe "#dir_pa" do
-		it "return Pa instance" do
-			Pa('/home/guten').dir_pa.should be_an_instance_of(Pa)
-		end
-	end
-
 end

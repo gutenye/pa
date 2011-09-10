@@ -1,9 +1,9 @@
-$: << "."
-require "version"
+$: << File.expand_path("../lib", __FILE__)
+require "pa/version"
 
 Gem::Specification.new do |s|
 	s.name = "pa"
-	s.version = Pa::VERSION::IS
+	s.version = Pa::VERSION
 	s.summary = "a path library for Ruby"
 	s.description = <<-EOF
 a path library for Ruby
@@ -16,5 +16,5 @@ a path library for Ruby
 
 	s.files = `git ls-files`.split("\n")
 
-	s.add_dependency "tagen", "~>1.0.0"
+	#s.add_dependency "tagen", "~>1.0.0"
 end
