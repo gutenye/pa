@@ -40,32 +40,36 @@ class Pa
       def glob2(*args, &blk)
         paths, o = Util.extract_options(args)
         paths.map!{|v|get(v)}
+        blk ||= proc { |path| path }
 
         flag = 0
         o.each do |option, value|
-          next if option==:use_pa
           flag |= File.const_get("FNM_#{option.upcase}") if value
         end
 
-        ret = Dir.glob(paths, flag)
+        files = Dir.glob(paths, flag)
 
         # delete . .. for '.*'
-        %w(. ..).each {|v| ret.delete(v)}
-        ret = ret.map{|v| Pa(v)} if o[:use_pa]
+        %w(. ..).each {|v| files.delete(v)}
 
-        if blk
-          ret.each {|pa|
-            blk.call pa
-          }
-        else
-          ret
-        end
+        ret = []
+        files.each { |path|
+          ret << blk.call(path)
+        }
+
+        ret
       end
 
       def glob(*args, &blk)
         args, o = Util.extract_options(args)
-        o[:use_pa] = true
-        glob2(*args, o, &blk)
+        ret = []
+        blk ||= proc { |path| path }
+
+        glob2 *args, o do |path|
+          ret << blk.call(Pa(path))
+        end
+
+        ret
       end
 
       # is directory empty?
@@ -120,19 +124,15 @@ class Pa
 
           # => "foo" not "./foo"
           pa = path=="." ? entry : File.join(path, entry)
-          pa = Pa(pa) if o[:use_pa]
-          if o[:error]
-            blk.call pa, err  
-          else
-            blk.call pa
+          blk.call pa, err  
           end
         end
-      end
 
       def each(*args, &blk)
         args, o = Util.extract_options(args)
-        o[:use_pa] = true
-        each2(*args, o, &blk)
+        each2 *args, o do |path, err|
+          blk.call Pa(path), err
+        end
       end
 
       # each with recursive
@@ -159,8 +159,9 @@ class Pa
 
       def each_r(*args, &blk)
         args, o = Util.extract_options(args)
-        o[:use_pa] = true
-        each2_r(*args, o, &blk)
+        each2_r *args, o do |path, err|
+          blk.call path, err
+        end
       end
 
       # list directory contents
@@ -178,8 +179,8 @@ class Pa
       #   @yieldparam [String] fname
       #   @return [Array<String>]
       def ls2(*args, &blk)
-        blk ||= proc {true}
-        each2(*args).with_object([]) { |path,m| 
+        blk ||= proc { true }
+        each2(*args).with_object([]) { |(path),m| 
           base = File.basename(path)
           ret = blk.call(path, base)
           m << base if ret
@@ -188,8 +189,12 @@ class Pa
 
       def ls(*args, &blk)
         args, o = Util.extract_options(args)
-        o[:use_pa] = true
-        ls2(*args, o, &blk)
+        blk ||= proc { true }
+
+        ls2 *args do |path, fname|
+          ret = blk.call(Pa(path), fname)
+          m << fname if ret 
+        end
       end
 
       # ls2 with recursive
@@ -217,16 +222,16 @@ class Pa
       # @param [String] path
       def _each2_r(path, relative, o, &blk)
         o.merge!(error: true)
-        Pa.each2(path, o) do |path1, err|
+
+        Pa.each2(path, o) do |path2, err|
           # fix for File.join with empty string
-          joins=[ relative=="" ? nil : relative, File.basename(path1)].compact
-          relative1 = File.join(*joins)
+          joins=[ relative=="" ? nil : relative, File.basename(path2)].compact
+          relative2 = File.join(*joins)
 
-          path1 = Pa(path1) if o[:use_pa]
-          blk.call path1, relative1, err
+          blk.call path2, relative2, err
 
-          if File.directory?(path1)
-            _each2_r(path1, relative1, o, &blk)
+          if File.directory?(path2)
+            _each2_r(path2, relative2, o, &blk)
           end
         end
       end

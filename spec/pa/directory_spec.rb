@@ -77,11 +77,11 @@ describe Pa do
 		end
 
 		it "each2(.) return 'foo' not '.foo'" do 
-			Pa.each2.with_object([]){|pa,m| m<<pa}.sort.should == %w(.fa dira fa fa~)
+			Pa.each2.with_object([]){|(pa),m| m<<pa}.sort.should == %w(.fa dira fa fa~)
 		end
 
 		it "each2(nodot: true) -> list all files except dot file" do
-			Pa.each2(nodot: true).with_object([]){|pa,m|m<<pa}.sort.should == %w(dira fa fa~)
+			Pa.each2(nodot: true).with_object([]){|(pa),m|m<<pa}.sort.should == %w(dira fa fa~)
 		end
 
 	end
