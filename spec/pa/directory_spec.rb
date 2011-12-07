@@ -29,17 +29,17 @@ describe Pa do
 			FileUtils.rm @files
 		end
 
-		context "call without any option" do
-			it "returns 1 items" do
-				Pa.glob2("*").should have(1).items
-			end
-		end
+    it "returns 1 items" do
+      Pa.glob2("*").should have(1).items
+    end
 
-		context "call with :dotmatch option" do
-			it "returns 2 items" do
-				Pa.glob2("*", dotmatch: true).should have(2).items
-			end
-		end
+    it "returns 2 items with :dotmatch" do
+      Pa.glob2("*", dotmatch: true).should have(2).items
+    end
+
+    it "#glob returns Pa instead" do
+      Pa.glob("*")[0].should be_an_instance_of Pa
+    end
 	end
 
 	describe "#each2" do
@@ -84,6 +84,12 @@ describe Pa do
 			Pa.each2(nodot: true).with_object([]){|(pa),m|m<<pa}.sort.should == %w(dira fa fa~)
 		end
 
+    it "each returns Pa" do
+      Pa.each { |pa|
+        pa.should be_an_instance_of Pa
+        break
+      }
+    end
 	end
 
 	describe "#each2_r" do
@@ -106,8 +112,14 @@ describe Pa do
 			Pa.each2_r.should be_an_instance_of Enumerator
 		 	Pa.each2_r.with_object([]){|(pa,r),m|m<<r}.sort.should == %w(.fa dira dira/dirb dira/dirb/b fa fa~)
 		end
-	end
 
+    it "#each_r returns Pa" do
+      Pa.each_r { |pa|
+        pa.should be_an_instance_of Pa
+        break
+      }
+    end
+	end
 
 	describe "#ls2" do
 		# filea 
@@ -131,5 +143,10 @@ describe Pa do
 		it "call a block" do
 			Pa.ls2 { |pa, fname| File.directory?(pa)  }.should == ["dira"]
 		end
+
+    it "#ls returns string" do
+      Pa.ls[0].should be_an_instance_of String
+    end
 	end
 end
+

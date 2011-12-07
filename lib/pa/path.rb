@@ -229,11 +229,13 @@ class Pa
       alias fe2 fext2
 
       # fix name,2 => String
-      alias name name2
+      alias base base2
       alias fname fname2
+      alias name name2
       alias ext ext2
       alias fext fext2
 
+      alias b base
       alias fn fname
       alias n name
       alias e ext
@@ -256,13 +258,23 @@ class Pa
       end
 
       # @return [String]
-      def sub2(*args,&blk)
-        path.sub(*args,&blk)
+      def sub2(*args, &blk)
+        path.sub(*args, &blk)
       end
 
       # @return [String]
-      def gsub2(*args,&blk)
-        path.gsub(*args,&blk)
+      def gsub2(*args, &blk)
+        path.gsub(*args, &blk)
+      end
+
+      # @return [Pa]
+      def sub(*args, &blk)
+        Pa(sub2(*args, &blk))
+      end
+
+      # @return [Pa]
+      def gsub(*args, &blk)
+        Pa(gsub2(*args, &blk))
       end
 
       # @return [Pa]

@@ -158,9 +158,11 @@ class Pa
       end
 
       def each_r(*args, &blk)
+        return Pa.to_enum(:each_r, *args) if not blk
+
         args, o = Util.extract_options(args)
         each2_r *args, o do |path, err|
-          blk.call path, err
+          blk.call Pa(path), err
         end
       end
 
@@ -187,14 +189,23 @@ class Pa
         }
       end
 
+      # @overload ls(path=".", o={})
+      # 	@return [Array<Pa>]
+      # @overload ls(path=".", o={})
+      #   @yieldparam [Pa] path
+      #   @yieldparam [String] fname
+      #   @return [Array<String>]
       def ls(*args, &blk)
         args, o = Util.extract_options(args)
         blk ||= proc { true }
+        ret = []
 
         ls2 *args do |path, fname|
-          ret = blk.call(Pa(path), fname)
-          m << fname if ret 
+          rst = blk.call(Pa(path), fname)
+          ret << fname if rst 
         end
+
+        ret
       end
 
       # ls2 with recursive
