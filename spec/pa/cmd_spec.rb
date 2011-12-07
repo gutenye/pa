@@ -269,11 +269,10 @@ describe Pa do
 		end
 	end
 
-	describe ".rename" do
+	describe ".rename2" do
 		it "works" do
-			Pa.rename('/home/guten.jpg') {|pa|
-				pa.name+'_1'+pa.fext
-			}.should == '/home/guten_1.jpg'
+			a = Pa.rename2('/home/guten.jpg') {|pa| pa.name+'_1'+pa.fext }
+      a.should == '/home/guten_1.jpg'
 		end
 	end
 
@@ -284,6 +283,4 @@ describe Pa do
 			}.should == Pa('/home/guten_1.jpg')
 		end
 	end
-
-
 end

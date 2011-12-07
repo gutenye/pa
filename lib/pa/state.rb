@@ -3,7 +3,7 @@ class Pa
     extend Util::Concern
     module ClassMethods
       # goes to File
-      FILE_DELEGATED_METHODS = [ :exists?, :atime, :ctime, :mtime, :stat, :lstat, :size, :zero?, :executable?, :executable_real?, :world_executable?, :readable?, :readable_real?, :world_readalbe?, :writeable?, :writeable_real?, :world_writeable?, :directory?, :file?, :blockdev?, :chardev?, :piple?, :socket?, :symlink?, :dangling?, :owned?, :grpowned?, :setgid?, :setuid?, :stricky?, :identical? ]
+      FILE_DELEGATED_METHODS = [ :exists?, :atime, :ctime, :mtime, :stat, :lstat, :size, :zero?, :executable?, :executable_real?, :world_executable?, :readable?, :readable_real?, :world_readalbe?, :writeable?, :writeable_real?, :world_writeable?, :directory?, :file?, :blockdev?, :chardev?, :piple?, :socket?, :symlink?, :owned?, :grpowned?, :setgid?, :setuid?, :stricky?, :identical? ]
 
       # delegated from File
       FILE_DELEGATED_METHODS.each { |name|

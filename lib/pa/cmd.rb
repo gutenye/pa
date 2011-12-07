@@ -59,12 +59,11 @@ class Pa
         File.readlink(get(path)) 
       end
 
-
       # change directory
       #
       # @param [String,Pa] path
       def cd(path=ENV["HOME"], &blk)
-        ::Dir.chdir(get(path), &blk) 
+        Dir.chdir(get(path), &blk) 
       end
 
       # chroot
@@ -73,7 +72,7 @@ class Pa
       # @param [String] path
       # @return [nil]
       def chroot(path)
-        ::Dir.chroot(get(path)) 
+        Dir.chroot(get(path)) 
       end
 
       # touch a blank file
@@ -135,12 +134,12 @@ class Pa
       def mktmpdir(o={}, &blk) 
         p = _mktmpname(o)
         File.mkdir(p)
-        begin blk.call(p) ensure ::Dir.delete(p) end if blk
+        begin blk.call(p) ensure Dir.delete(p) end if blk
         p
       end # def mktmpdir
 
       def home(user=nil)
-        ::Dir.home 
+        Dir.home 
       end
 
       # make temp file
@@ -301,14 +300,13 @@ class Pa
       #
       # @example
       #
-      #   Pa.rename('/home/guten.jpg') {|pa| pa.name+'_1'+pa.fext} # => '/home/guten_1.jpg'
-      #   Pa('/home/guten.jpg').rename {|pa| pa.name+'_1'+pa.fext} # => <#Pa('/home/guten_1.jpg')>
+      #   Pa.rename2('/home/guten.jpg') {|pa| pa.name+'_1'+pa.fext} # => '/home/guten_1.jpg'
       #
       # @param [String,Pa] src
       # @yieldparam [Pa] pa 
       # @yieldreturn [String] fname 
       # @return [String,Pa] # Pa.rename return String. Pa#rename return Pa.
-      def rename(src, &blk)
+      def rename2(src, &blk)
         src = Pa(src)
         fname = blk.call(src)
         src.dir.join(fname).path
@@ -429,7 +427,7 @@ class Pa
           end
 
           stack.reverse.each do |path|
-            ::Dir.mkdir(path)
+            Dir.mkdir(path)
             File.chmod(o[:mode], path)
           end
         }
@@ -463,7 +461,7 @@ class Pa
         pa.each {|pa1|
           File.directory?(pa1.p) ? _rmdir(pa1, o) : File.delete(pa1.p)
         }
-        File.directory?(pa.p) ? ::Dir.rmdir(pa.p) : File.delete(pa.p)
+        File.directory?(pa.p) ? Dir.rmdir(pa.p) : File.delete(pa.p)
       end
 
       # I'm recursive 

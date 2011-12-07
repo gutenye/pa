@@ -15,10 +15,14 @@ class Pa
 	NAME_EXT_PAT = /^(.+?)(?:\.([^.]+))?$/
   module Path
     extend Util::Concern
+
     module ClassMethods
       # get path of an object. 
       #
       # return obj#path if object has a 'path' instance method
+      #
+      # nil -> nil
+      #
       #
       # @param [String,#path] obj
       # @return [String,nil] path
@@ -27,8 +31,10 @@ class Pa
           obj.path
         elsif String === obj 
           obj
+        elsif obj.nil?
+          nil
         else
-          raise Error, "not support type -- #{obj.inspect}(#{obj.class})"
+          raise ArgumentError, "Pa.get() not support type -- #{obj.inspect}(#{obj.class})"
         end
       end
 
@@ -37,6 +43,32 @@ class Pa
       def pwd2
         Dir.getwd 
       end
+
+      # is path an absolute path ?
+      #
+      # @param [String,Pa] path
+      # @return [Boolean]
+      def absolute?(path) 
+        path=get(path) 
+        File.absolute_path(path) == path 
+      end
+
+      # is path a dangling symlink?
+      #
+      # a dangling symlink is a dead symlink.
+      #
+      # @param [String,Pa] path
+      # @return [Boolean]
+      def dangling? path
+        path=get(path)
+        if File.symlink?(path)
+          src = File.readlink(path)
+          not File.exists?(src)
+        else
+          nil
+        end
+      end # def dsymlink?
+
 
       def dir2(path)
         File.dirname(path)
@@ -76,40 +108,53 @@ class Pa
         ext
       end
 
-
       # alias from File.absolute_path
       # @param [String,Pa] path
       # @return [String]
-      def absolute2(path); File.absolute_path(get(path)) end
+      def absolute2(path) 
+        File.absolute_path get(path)
+      end
 
       # alias from File.expand_path
       # @param [String,Pa] path
       # @return [String]
-      def expand2(path); File.expand_path(get(path)) end
+      def expand2(path) 
+        File.expand_path get(path) 
+      end
 
       # shorten2 a path,
       # convert /home/user/file to ~/file
       #
       # @param [String,Pa] path
       # @return [String]
-      def shorten2(path);
-        get(path).sub(%r!^#{Regexp.escape(ENV["HOME"])}!, "~")
+      def shorten2(path)
+        get(path).sub /^#{Regexp.escape(ENV["HOME"])}/, "~"
       end
 
+      # real path
+      def real2(path) 
+        File.realpath get(path)
+      end
 
-
-      # is path an absolute path ?
-      #
+      # get parent path
+      # 
       # @param [String,Pa] path
-      # @return [Boolean]
-      def absolute?(path) path=get(path); File.absolute_path(path) == path end
+      # @param [Fixnum] n up level
+      # @return [String]
+      def parent2(path, n=1)
+        path = get(path)
+        n.times do
+          path = File.dirname(path)
+        end
+        path
+      end
        
       # split path
       #
       # @example
       # 	path="/home/a/file"
-      # 	split(path)  #=> "/home/a", "file"
-      # 	split(path, :all)  #=> "/", "home", "a", "file"
+      # 	split2(path)  #=> "/home/a", "file"
+      # 	split2(path, :all => true)  #=> "/", "home", "a", "file"
       #
       # @param [String,Pa] name
       # @param [Hash] o option
@@ -117,7 +162,7 @@ class Pa
       # @return [Array<String>] 
       def split2(name, o={})
         dir, fname = File.split(get(name))
-        ret = Util.wrap_array(basename(fname, o))
+        ret = Util.wrap_array(File.basename(fname))
 
         if o[:all]
           loop do
@@ -131,6 +176,7 @@ class Pa
         ret
       end
 
+      # special case
       def split(*args)
         dir, *names = split2(*args)
         [ Pa(dir), *names]
@@ -151,38 +197,6 @@ class Pa
 
         File.join(*paths)
       end
-
-      # get parent path
-      # 
-      # @param [String,Pa] path
-      # @param [Fixnum] n up level
-      # @return [String]
-      def parent2(path, n=1)
-        path = get(path)
-        n.times do
-          path = File.dirname(path)
-        end
-        path
-      end
-
-      # is path a dangling symlink?
-      #
-      # a dangling symlink is a dead symlink.
-      #
-      # @param [String,Pa] path
-      # @return [Boolean]
-      def dangling? path
-        path=get(path)
-        if File.symlink?(path)
-          src = File.readlink(path)
-          not File.exists?(src)
-        else
-          nil
-        end
-      end # def dsymlink?
-
-      # real path
-      def real2(path) File.realpath(get(path)) end
     end
 
     module InstanceMethods

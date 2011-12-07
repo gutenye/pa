@@ -20,7 +20,7 @@
 
 =end
 class Pa
-  module Dir
+  module Directory
     extend Util::Concern
 
     module ClassMethods
@@ -47,7 +47,7 @@ class Pa
           flag |= File.const_get("FNM_#{option.upcase}") if value
         end
 
-        ret = ::Dir.glob(paths, flag)
+        ret = Dir.glob(paths, flag)
 
         # delete . .. for '.*'
         %w(. ..).each {|v| ret.delete(v)}
@@ -73,7 +73,7 @@ class Pa
       # @param [String] path
       # @return [Boolean]
       def empty?(path)
-        ::Dir.entries(get(path)).empty? 
+        Dir.entries(get(path)).empty? 
       end
 
       # traverse directory 
@@ -108,7 +108,7 @@ class Pa
         raise Errno::ENOTDIR, "`#{path}' not a directoy."  unless File.directory?(path)
 
         begin
-          dir = ::Dir.open(path)
+          dir = Dir.open(path)
         rescue Errno::EPERM => err
         end
         raise err if err and !o[:error]

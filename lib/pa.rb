@@ -75,7 +75,7 @@ class Pa
       # dir -> dir2
       name2 = "#{name}2".to_sym
       if public_methods.include?(name2)
-        ret = __send__(name2, *args)
+        ret = __send__(name2, *args, &blk)
         return case ret
         when Array
           ret.map{|v| Pa(v)}
@@ -130,17 +130,7 @@ class Pa
 
 	# missing method goes to Pa.class-method 
 	def method_missing(name, *args, &blk)
-		ret = self.class.__send__(name, path, *args, &blk)
-
-		case ret	
-		# e.g. readlink ..
-		when String
-			Pa(ret)
-		# e.g. directory? 
-		else
-			ret
-		end
-
+		self.class.__send__(name, path, *args, &blk)
 	end
 
 	def <=> other
@@ -158,15 +148,14 @@ end
 
 require "pa/path"
 require "pa/cmd"
-require "pa/dir"
+require "pa/directory"
 require "pa/state"
 class Pa
   include Path
-  include Dir
+  include Directory
   include State
   include Cmd
 end
-
 
 module Kernel
 private
