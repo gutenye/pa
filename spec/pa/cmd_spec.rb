@@ -134,7 +134,7 @@ describe Pa do
 
 		it "_copy directory" do
 			Pa._copy 'dir', 'dirc'
-			Dir.entries('dirc').should == Dir.entries('dir')
+			Dir.entries('dirc').sort.should == Dir.entries('dir').sort
 		end
 
 		context "with :symlink" do

@@ -3,11 +3,16 @@ class Pa
     extend Util::Concern
     module ClassMethods
       # goes to File
-      [ :exists?, :atime, :ctime, :mtime, :stat, :lstat, :size, :zero?, :executable?, :executable_real?, :world_executable?, :readable?, :readable_real?, :world_readalbe?, :writeable?, :writeable_real?, :world_writeable?, :directory?, :file?, :blockdev?, :chardev?, :piple?, :socket?, :symlink?, :dangling?, :owned?, :grpowned?, :setgid?, :setuid?, :stricky?, :identical? ].each do |name|
-        define_method(name) { |*args|
-          File.__send__ name, *args
-        }
-      end
+      FILE_DELEGATED_METHODS = [ :exists?, :atime, :ctime, :mtime, :stat, :lstat, :size, :zero?, :executable?, :executable_real?, :world_executable?, :readable?, :readable_real?, :world_readalbe?, :writeable?, :writeable_real?, :world_writeable?, :directory?, :file?, :blockdev?, :chardev?, :piple?, :socket?, :symlink?, :dangling?, :owned?, :grpowned?, :setgid?, :setuid?, :stricky?, :identical? ]
+
+      # delegated from File
+      FILE_DELEGATED_METHODS.each { |name|
+        module_eval <<-METHOD, __FILE__, __LINE__
+          def #{name}(*args)
+            File.#{name}(*args)
+          end
+        METHOD
+      }
 
       # @see File.chmod
       def chmod(mode, *paths)
