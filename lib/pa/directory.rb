@@ -72,6 +72,10 @@ class Pa
         ret
       end
 
+      def tmpdir
+        Dir.tmpdir
+      end
+
       # is directory empty?
       #
       # @param [String] path

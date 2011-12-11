@@ -20,6 +20,12 @@ describe Pa do
 		FileUtils.rm_r @tmpdir
 	end
 
+  describe ".tmpdir" do
+    it "works" do
+      Pa.tmpdir.should == Dir.tmpdir
+    end
+  end
+
 	describe "#glob2" do
 		before(:each) do 
 			@files = %w(fa .fa)
