@@ -72,7 +72,7 @@ class Pa
         ret
       end
 
-      def tmpdir
+      def tmpdir2
         Dir.tmpdir
       end
 

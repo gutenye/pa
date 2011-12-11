@@ -20,9 +20,9 @@ describe Pa do
 		FileUtils.rm_r @tmpdir
 	end
 
-  describe ".tmpdir" do
+  describe ".tmpdir2" do
     it "works" do
-      Pa.tmpdir.should == Dir.tmpdir
+      Pa.tmpdir2.should == Dir.tmpdir
     end
   end
 
