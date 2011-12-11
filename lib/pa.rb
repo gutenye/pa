@@ -1,3 +1,5 @@
+require "tmpdir"
+
 =begin rdoc
 Pa(Path) is similary to Pathname, but more powerful.
 it combines fileutils, tmpdir, find, tempfile, File, Dir, Pathname
