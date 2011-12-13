@@ -73,6 +73,95 @@ class Pa
 	EUnkonwType = Class.new Error
 
   class << self
+    # get path of an object. 
+    #
+    # return obj#path if object has a 'path' instance method
+    #
+    # nil -> nil
+    #
+    #
+    # @param [String,#path] obj
+    # @return [String,nil] path
+    def get(obj)
+      if String === obj
+        obj
+      elsif obj.respond_to?(:path)
+        obj.path
+      elsif obj.nil?
+        nil
+      else
+        raise ArgumentError, "Pa.get() not support type -- #{obj.inspect}(#{obj.class})"
+      end
+    end
+
+    # split path
+    #
+    # @example
+    # 	path="/home/a/file"
+    # 	split2(path)  #=> "/home/a", "file"
+    # 	split2(path, :all => true)  #=> "/", "home", "a", "file"
+    #
+    # @param [String,Pa] name
+    # @param [Hash] o option
+    # @option o [Boolean] :all split all parts
+    # @return [Array<String>] 
+    def split2(name, o={})
+      dir, fname = File.split(get(name))
+      ret = Util.wrap_array(File.basename(fname))
+
+      if o[:all]
+        loop do
+          dir1, fname = File.split(dir)
+          break if dir1 == dir
+          ret.unshift fname
+          dir = dir1
+        end
+      end
+      ret.unshift dir
+      ret
+    end
+
+    # special case
+    def split(*args)
+      dir, *names = split2(*args)
+      [ Pa(dir), *names]
+    end
+
+    # join paths, skip nil and empty string.
+    #
+    # @param [*Array<String>] *paths
+    # @return [String]
+    def join2(*paths)
+      paths.map!{|v|get(v)}
+
+      # skip nil
+      paths.compact!
+      # skip empty string
+      paths.delete("")
+
+      File.join(*paths)
+    end
+
+    # build a path
+    # options :path, :dir, :fname, :base, :name, :fext, :ext
+    # use Pa.join2
+    def build2(data={})
+      if data[:path]
+        ret = data[:path]
+      elsif data[:fname] || data[:base]
+        ret = join2(data[:dir], data[:fname] || data[:base])
+      else
+        ret = join2(data[:dir], data[:name])
+        if data[:fext]
+          ret << data[:fext]
+        elsif data[:ext]
+          ret << ".#{data[:ext]}"
+        end
+      end
+
+      ret
+    end
+
     def method_missing(name, *args, &blk)
       # dir -> dir2
       name2 = "#{name}2".to_sym
@@ -90,35 +179,96 @@ class Pa
     end
   end
 
-	attr_reader :path
-	alias p path
-  alias path2 path
-  alias p2 path
+	attr_reader :path2
+  attr_reader :absolute2, :dir2, :dir_strict2, :base2, :fname2, :name2, :short2, :ext2, :fext2
 
-	# @param [String,#path] path
+	# @param [String, #path] path
 	def initialize(path)
-		@path = path.respond_to?(:path) ? path.path : path
+		@path2 = Pa.get(path)
+
 		initialize_variables
-	end
+  end
 
 	chainable = Module.new do
 		def initialize_variables; end
 	end
 	include chainable
 
-	# @param [String,#path]
-	# @return [Pa] the same Pa object
-	def replace(path)
-		@path = path.respond_to?(:path) ? path.path : path
-		initialize_variables
-	end
+  def absolute2
+    @absolute2 ||= File.absolute_path(path)
+  end
+
+  # => ".", "..", "/", "c:"
+  def dir2
+    @dir2 ||= File.dirname(path)
+  end
+
+  # Pa("foo") => ""
+  # Pa("./foo") => "."
+  def dir_strict2
+    return @dir_strict2 if @dir_strict2
+
+    dir = File.dirname(path)
+
+    @dir_strict2 = if %w[. ..].include?(dir) && path !~ %r!^\.\.?/!
+      ""
+    else
+      dir
+    end
+  end
+
+  def base2
+    @base2 ||= File.basename(path)
+  end
+
+  def name2
+    @name2 ||= File.basename(path).match(/^(.+?)(?:\.([^.]+))?$/)[1]
+  end
+
+  # => "ogg", ""  
+  def ext2
+    @ext2 ||= File.basename(path).match(/^(.+?)(?:\.([^.]+))?$/)[2] || ""
+  end
+
+  # => ".ogg", ""
+  def fext2
+    @fext2 ||= ext2.empty? ? "" : ".#{ext2}"
+  end
+
+  alias fname2 base2
+
+  # both x, x2 return String
+	alias path path2
+  alias base base2
+  alias fname fname2
+  alias name name2
+  alias ext ext2
+  alias fext fext2
+
+  # abbretive
+  alias p2 path2 
+  alias p2 path
+  alias a2 absolute2
+  alias d2 dir2
+  alias d_s2 dir_strict2
+  alias	b2 base2
+  alias n2 name2
+  alias fn2 fname2
+  alias e2 ext2
+  alias fe2 fext2
+  alias p path
+  alias b base
+  alias fn fname
+  alias n name
+  alias e ext
+  alias fe fext
 
 	# return '#<Pa @path="foo", @absolute="/home/foo">'
 	#
 	# @return [String]
 	def inspect
 		ret="#<" + self.class.to_s + " "
-		ret += "@path=\"#{path}\", @absolute=\"#{absolute}\""
+		ret += "@path=\"#{path}\", @absolute2=\"#{absolute2}\""
 		ret += " >"
 		ret
 	end
@@ -127,7 +277,14 @@ class Pa
 	#
 	# @return [String] path
 	def to_s
-		@path
+		path
+	end
+
+	# @param [String,#path]
+	# @return [Pa] the same Pa object
+	def replace(path)
+		@path2 = Pa.get(path)
+		initialize_variables
 	end
 
 	# missing method goes to Pa.class-method 
@@ -135,17 +292,96 @@ class Pa
 		self.class.__send__(name, path, *args, &blk)
 	end
 
-	def <=> other
-		other_path = if other.respond_to?(:path) 
-			 other.path
-			elsif String === other
-				other
-			else
-				raise Error, "not support type -- #{other.class}"
-			end
+  def ==(other)
+    case other
+    when Pa
+      self.path == other.path
+    else
+      false
+    end
+  end
 
-		path <=> other_path 
+	def <=>(other)
+    path <=> Pa.get(other)
 	end
+
+  def =~(regexp)
+    path =~ regexp 
+  end
+
+  # add string to path
+  # 
+  # @example 
+  #  pa = Pa('/home/foo/a.txt')
+  #  pa+'~' #=> new Pa('/home/foo/a.txt~')
+  #
+  # @param [String] str
+  # @return [Pa]
+  def +(str)
+    Pa(path+str)
+  end
+
+  def short2
+    @short2 ||= Pa.shorten2(@path) 
+  end
+
+  # @return [String]
+  def sub2(*args, &blk)
+    path.sub(*args, &blk)
+  end
+
+  # @return [String]
+  def gsub2(*args, &blk)
+    path.gsub(*args, &blk)
+  end
+
+  # @return [Pa]
+  def sub(*args, &blk)
+    Pa(sub2(*args, &blk))
+  end
+
+  # @return [Pa]
+  def gsub(*args, &blk)
+    Pa(gsub2(*args, &blk))
+  end
+
+  # @return [Pa]
+  def sub!(*args,&blk)
+    self.replace path.sub(*args,&blk)
+  end
+
+  # @return [Pa]
+  def gsub!(*args,&blk)
+    self.replace path.gsub(*args,&blk)
+  end
+
+  # @return [MatchData]
+  def match(*args,&blk)
+    path.match(*args,&blk)
+  end 
+
+  # @return [Boolean]
+  def start_with?(*args)
+    path.start_with?(*args)
+  end
+
+  # @return [Boolean]
+  def end_with?(*args)
+    path.end_with?(*args)
+  end
+
+  # @return [String]
+  def rename2(data={})
+    d = if data[:path]
+      {path: data[:path]}
+    elsif data[:fname] || data[:base]
+      {dir: dir_strict2, fname: data[:fname], base: data[:base]}
+    else
+      {dir: dir_strict2, name: name2, ext: ext2}.merge(data)
+    end
+
+    Pa.build2(d)
+  end
 end
 
 require "pa/path"
