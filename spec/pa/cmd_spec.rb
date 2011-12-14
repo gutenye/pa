@@ -268,19 +268,4 @@ describe Pa do
 			File.exists?("dir/b").should be_true
 		end
 	end
-
-	describe ".rename2" do
-		it "works" do
-			a = Pa.rename2('/home/guten.jpg') {|pa| pa.name+'_1'+pa.fext }
-      a.should == '/home/guten_1.jpg'
-		end
-	end
-
-	describe "#rename" do
-		it "works" do
-			Pa('/home/guten.jpg').rename {|pa|
-				pa.name+'_1'+pa.fext
-			}.should == Pa('/home/guten_1.jpg')
-		end
-	end
 end

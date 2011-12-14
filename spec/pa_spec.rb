@@ -1,6 +1,42 @@
 require "spec_helper"
 
+class Pa
+  class <<self
+    public :_wrap, :build_path2
+  end
+end
+
 describe Pa do
+  it "._wrap" do
+    Pa._wrap("foo").should == Pa("foo")
+    Pa._wrap(["guten", "tag"]).should == [Pa("guten"), Pa("tag")]
+  end
+
+  describe ".build_path2" do
+    it "works" do
+      Pa.build_path2(path: "foo/bar.avi").should == "foo/bar.avi"
+      Pa.build_path2(dir: "foo", name: "bar", ext: "avi").should == "foo/bar.avi"
+    end
+
+    it "complex examples" do
+      Pa.build_path2(dir: "foo").should == "foo"
+      Pa.build_path2(fname: "bar.avi").should == "bar.avi"
+      Pa.build_path2(base: "bar.avi").should == "bar.avi"
+      Pa.build_path2(name: "bar").should == "bar"
+      Pa.build_path2(fext: ".avi").should == ".avi"
+      Pa.build_path2(ext: "avi").should == ".avi"
+      Pa.build_path2(dir: "", fname: "bar.avi").should == "bar.avi"
+    end
+
+    it "percedure" do
+      Pa.build_path2(path: "foo", fname: "bar").should == "foo"
+      Pa.build_path2(fname: "foo", name: "bar").should == "foo"
+      Pa.build_path2(fname: "foo", ext: "bar").should == "foo" 
+      Pa.build_path2(fname: "foo", fext: ".bar").should == "foo" 
+      Pa.build_path2(fext: "foo", ext: "bar").should == "foo" 
+    end
+  end
+
   describe ".get" do
     it "get path from a path object" do
       path = Object.new
@@ -55,33 +91,71 @@ describe Pa do
 
   describe ".build2" do
     it "works" do
-      Pa.build2(path: "foo/bar.avi").should == "foo/bar.avi"
-      Pa.build2(dir: "foo", name: "bar", ext: "avi").should == "foo/bar.avi"
-    end
-
-    it "complex examples" do
-      Pa.build2(dir: "foo").should == "foo"
-      Pa.build2(fname: "bar.avi").should == "bar.avi"
-      Pa.build2(base: "bar.avi").should == "bar.avi"
-      Pa.build2(name: "bar").should == "bar"
-      Pa.build2(fext: ".avi").should == ".avi"
-      Pa.build2(ext: "avi").should == ".avi"
-      Pa.build2(dir: "", fname: "bar.avi").should == "bar.avi"
-    end
-
-    it "percedure" do
-      Pa.build2(path: "foo", fname: "bar").should == "foo"
-      Pa.build2(fname: "foo", name: "bar").should == "foo"
-      Pa.build2(fname: "foo", ext: "bar").should == "foo" 
-      Pa.build2(fname: "foo", fext: ".bar").should == "foo" 
-      Pa.build2(fext: "foo", ext: "bar").should == "foo" 
+      Pa.build2("/home/guten.avi"){ |p| "#{p.dir}/foo.#{p.ext}" }.should == "/home/foo.avi"
+      Pa.build2(dir: "/home", name: "guten", ext: "avi").should == "/home/guten.avi"
+      Pa.build2(path: "/home/guten.avi"){ |p| "#{p.dir}/foo.#{p.ext}" }.should == "/home/foo.avi"
     end
   end
 
-  it "#method_missing" do
-    p = Pa.new("foo.avi")
-    p.shorten2.should == "foo.avi"
-    p.shorten.should == Pa("foo.avi")
+  describe ".method_missing" do
+
+    it ".foo goto .foo2" do
+      class Pa
+        def self.guten_a2
+          "bbz"
+        end
+      end
+
+      Pa.guten_a.should == Pa.new("bbz")
+    end
+
+    it "raise NoMethodError" do
+      lambda { Pa.guten_not_exists }.should raise_error(NoMethodError)
+    end
+  end
+
+  describe "#method_missing" do
+    before :all do
+      class Pa
+        def self.foo2; ".foo2" end
+        def foo2     ; "#foo2" end
+        def self.baz2; ".baz2" end
+        def self.bar2; ".bar2" end
+
+        def self.foo2?; ".foo2?" end
+        def foo2?     ; "#foo2?" end
+        def self.baz2?; ".baz2?" end
+        def self.bar2?; ".bar2?" end
+      end
+    end
+
+    it "#foo goto #foo2" do
+      Pa.new("x").foo.should == Pa.new("#foo2")
+    end
+
+    it "#baz2 goto .baz2" do
+      Pa.new("x").baz2.should == ".baz2"
+    end
+
+    it "#bar goto .bar2" do
+      Pa.new("x").bar.should == Pa.new(".bar2")
+    end
+
+    it "#foo? goto #foo2?" do
+      Pa.new("x").foo?.should == Pa.new("#foo2?")
+    end
+
+    it "#baz2? goto .baz2?" do
+      Pa.new("x").baz2?.should == ".baz2?"
+    end
+
+    it "#bar? goto .bar2?" do
+      Pa.new("x").bar?.should == Pa.new(".bar2?")
+    end
+
+    it "raise NoMethodError" do
+      lambda { Pa.new("x").guten_not_exists }.should raise_error(NoMethodError)
+    end
   end
 
   it "#absolute2" do
@@ -203,24 +277,24 @@ describe Pa do
 		end
 	end
 
-  describe "#rename2" do
+  describe "#build2" do
     it "works" do
-      Pa.new("/home/guten.avi").rename2(path: "/foo/bar.avi").should == "/foo/bar.avi"
-      Pa.new("/home/guten.avi").rename2(dir: "foo").should == "foo/guten.avi"
-      Pa.new("/home/guten.avi").rename2(fname: "bar").should == "/home/bar"
-      Pa.new("/home/guten.avi").rename2(base: "bar").should == "/home/bar"
-      Pa.new("/home/guten.avi").rename2(name: "bar").should == "/home/bar.avi"
-      Pa.new("/home/guten.avi").rename2(ext: "ogg").should == "/home/guten.ogg"
-      Pa.new("/home/guten.avi").rename2(fext: ".ogg").should == "/home/guten.ogg"
-      Pa.new("/home/guten.avi").rename2(dir: "foo", name: "bar", ext: "ogg").should == "foo/bar.ogg"
+      Pa.new("/home/guten.avi").build2(path: "/foo/bar.avi").should == "/foo/bar.avi"
+      Pa.new("/home/guten.avi").build2(dir: "foo").should == "foo/guten.avi"
+      Pa.new("/home/guten.avi").build2(fname: "bar").should == "/home/bar"
+      Pa.new("/home/guten.avi").build2(base: "bar").should == "/home/bar"
+      Pa.new("/home/guten.avi").build2(name: "bar").should == "/home/bar.avi"
+      Pa.new("/home/guten.avi").build2(ext: "ogg").should == "/home/guten.ogg"
+      Pa.new("/home/guten.avi").build2(fext: ".ogg").should == "/home/guten.ogg"
+      Pa.new("/home/guten.avi").build2(dir: "foo", name: "bar", ext: "ogg").should == "foo/bar.ogg"
     end
 
     it "percedure" do
-      Pa.new("/home/guten.avi").rename2(path: "foo", fname: "bar").should == "foo"
-      Pa.new("/home/guten.avi").rename2(fname: "foo", name: "bar").should == "/home/foo"
-      Pa.new("/home/guten.avi").rename2(fname: "foo", ext: "ogg").should == "/home/foo"
-      Pa.new("/home/guten.avi").rename2(fname: "foo", fext: ".ogg").should == "/home/foo"
-      Pa.new("/home/guten.avi").rename2(fext: ".ogg", ext: "mp3").should == "/home/guten.ogg"
+      Pa.new("/home/guten.avi").build2(path: "foo", fname: "bar").should == "foo"
+      Pa.new("/home/guten.avi").build2(fname: "foo", name: "bar").should == "/home/foo"
+      Pa.new("/home/guten.avi").build2(fname: "foo", ext: "ogg").should == "/home/foo"
+      Pa.new("/home/guten.avi").build2(fname: "foo", fext: ".ogg").should == "/home/foo"
+      Pa.new("/home/guten.avi").build2(fext: ".ogg", ext: "mp3").should == "/home/guten.ogg"
     end
   end
 end

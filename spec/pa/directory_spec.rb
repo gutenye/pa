@@ -26,7 +26,7 @@ describe Pa do
     end
   end
 
-	describe "#glob2" do
+	describe ".glob2" do
 		before(:each) do 
 			@files = %w(fa .fa)
 			FileUtils.touch(@files)
@@ -48,7 +48,7 @@ describe Pa do
     end
 	end
 
-	describe "#each2" do
+	describe ".each2" do
 		# fa .fa fa~ 
 		# dira/
 		#   dirb/
@@ -64,7 +64,7 @@ describe Pa do
 			FileUtils.rm_r @dirs
 		end
 
-		it "runs on" do
+		it "works" do
 			ret = []
 			Pa.each2{|pa| ret << pa}
 			ret.sort.should == %w(.fa dira fa fa~)
@@ -98,7 +98,31 @@ describe Pa do
     end
 	end
 
-	describe "#each2_r" do
+  describe ".each" do
+		# fa .fa fa~ 
+		# dira/
+		#   dirb/
+		#     b
+		before(:each) do 
+			@dirs = %w(dira/dirb)
+			@files = %w(fa .fa fa~ dira/dirb/b)
+			FileUtils.mkdir_p(@dirs)
+			FileUtils.touch(@files)
+		end
+
+		after(:each) do 
+			FileUtils.rm @files
+			FileUtils.rm_r @dirs
+		end
+
+    it "works" do
+			ret = []
+			Pa.each{|pa| ret << pa.p }
+			ret.sort.should == %w(.fa dira fa fa~)
+    end
+  end
+
+	describe ".each2_r" do
 		# fa .fa fa~ 
 		# dira/
 		#   dirb/
@@ -127,7 +151,7 @@ describe Pa do
     end
 	end
 
-	describe "#ls2" do
+	describe ".ls2" do
 		# filea 
 		# dira/
 		# 	fileb
@@ -154,5 +178,51 @@ describe Pa do
       Pa.ls[0].should be_an_instance_of String
     end
 	end
+
+  describe "#each2" do
+		# dira/ fa
+		before(:each) do 
+			@dirs = %w(dira)
+			@files = %w(fa) 
+			FileUtils.mkdir_p(@dirs)
+			FileUtils.touch(@files)
+		end
+
+		after(:each) do 
+			FileUtils.rm @files
+			FileUtils.rm_r @dirs
+		end
+
+
+    it "works" do
+      ret = []
+      Pa.new(".").each2 {|p| ret << p }
+
+      ret.sort.should == %w[dira fa]
+    end
+  end
+
+  describe "#each" do
+		# dira/ fa
+		before(:each) do 
+			@dirs = %w(dira)
+			@files = %w(fa) 
+			FileUtils.mkdir_p(@dirs)
+			FileUtils.touch(@files)
+		end
+
+		after(:each) do 
+			FileUtils.rm @files
+			FileUtils.rm_r @dirs
+		end
+
+
+    it "works" do
+      ret = []
+      Pa.new(".").each {|p| ret << p.p }
+
+      ret.sort.should == %w[dira fa]
+    end
+  end
 end
 

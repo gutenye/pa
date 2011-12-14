@@ -295,23 +295,6 @@ class Pa
         cp src_s, dest, o, &blk
       end
 
-
-      # a rename util 
-      #
-      # @example
-      #
-      #   Pa.rename2('/home/guten.jpg') {|pa| pa.name+'_1'+pa.fext} # => '/home/guten_1.jpg'
-      #
-      # @param [String,Pa] src
-      # @yieldparam [Pa] pa 
-      # @yieldreturn [String] fname 
-      # @return [String,Pa] # Pa.rename return String. Pa#rename return Pa.
-      def rename2(src, &blk)
-        src = Pa(src)
-        fname = blk.call(src)
-        src.dir.join(fname).path
-      end
-
       # move, use rename for same device. and cp for cross device.
       # @see cp
       #
@@ -458,7 +441,7 @@ class Pa
       # param@ [Pa] path
       def _rmdir(pa, o={})
         return if not File.exists?(pa.p)
-        pa.each {|pa1|
+        Pa.each(pa) {|pa1|
           File.directory?(pa1.p) ? _rmdir(pa1, o) : File.delete(pa1.p)
         }
         File.directory?(pa.p) ? Dir.rmdir(pa.p) : File.delete(pa.p)

@@ -145,37 +145,58 @@ class Pa
     # build a path
     # options :path, :dir, :fname, :base, :name, :fext, :ext
     # use Pa.join2
-    def build2(data={})
-      if data[:path]
-        ret = data[:path]
-      elsif data[:fname] || data[:base]
-        ret = join2(data[:dir], data[:fname] || data[:base])
-      else
-        ret = join2(data[:dir], data[:name])
-        if data[:fext]
-          ret << data[:fext]
-        elsif data[:ext]
-          ret << ".#{data[:ext]}"
-        end
-      end
+    # @example
+    # 
+    #  Pa.build2(dir: "/home", name: "guten", ext: "avi") => "/home/guten.avi
+    #  Pa.build2("/home/guten.avi") { |pa| "#{pa.dir}/foo.#{pa.ext}" } => "/home/foo.avi
+    #
+    # @overload build2(path){|pa|=>String}
+    # @overload build2(data={})
+    # @overload build2(data={}){}
+    def build2(*args, &blk)
+      data = Hash===args.last ? args.pop : {}
+      path = args[0] || build_path2(data)
+      blk ||= proc {|pa| pa.p }
 
-      ret
+      blk.call(Pa(path))
     end
 
+    # .foo -> .foo2
     def method_missing(name, *args, &blk)
-      # dir -> dir2
       name2 = "#{name}2".to_sym
-      if public_methods.include?(name2)
-        ret = __send__(name2, *args, &blk)
-        return case ret
-        when Array
-          ret.map{|v| Pa(v)}
-        when String
-          Pa(ret)
+      return _wrap(__send__(name2, *args, &blk)) if public_methods.include?(name2)
+
+      raise NoMethodError, "no class method -- #{name}"
+    end
+
+  private
+
+    # wrap result to Pa
+    def _wrap(obj)
+      case obj
+      when Array
+        obj.map{|v| Pa(v)}
+      when String
+        Pa(obj)
+      end
+    end
+
+
+    def build_path2(data={})
+      if data[:path]
+        path = data[:path]
+      elsif data[:fname] || data[:base]
+        path = join2(data[:dir], data[:fname] || data[:base])
+      else
+        path = join2(data[:dir], data[:name])
+        if data[:fext]
+          path << data[:fext]
+        elsif data[:ext]
+          path << ".#{data[:ext]}"
         end
       end
 
-      raise NoMethodError, "no method -- #{name}"
+      path
     end
   end
 
@@ -287,10 +308,27 @@ class Pa
 		initialize_variables
 	end
 
-	# missing method goes to Pa.class-method 
 	def method_missing(name, *args, &blk)
-		self.class.__send__(name, path, *args, &blk)
-	end
+    # #foo2 goto .foo2
+    case name
+    when /2[?!]?$/
+      return Pa.__send__(name, *args, &blk) if Pa.public_methods.include?(name)
+
+    # #foo goto #foo2 or .foo2
+    # #foo? is #foo2?
+    else
+      name, extra = name.to_s.match(/(.*?)([?!])?$/).captures
+      name = "#{name}2#{extra}".to_sym
+
+      if Pa.instance_methods.include?(name)
+        return Pa.__send__(:_wrap, __send__(name, *args, &blk))
+      elsif Pa.public_methods.include?(name)
+        return Pa.__send__(:_wrap, Pa.__send__(name, *args, &blk))
+      end
+    end
+
+    raise NoMethodError, "no instance method -- #{name}"
+  end
 
   def ==(other)
     case other
@@ -371,7 +409,9 @@ class Pa
   end
 
   # @return [String]
-  def rename2(data={})
+  def build2(data={}, &blk)
+    return Pa.new(blk.call(self)) if blk
+
     d = if data[:path]
       {path: data[:path]}
     elsif data[:fname] || data[:base]
@@ -382,6 +422,7 @@ class Pa
 
     Pa.build2(d)
   end
+
 end
 
 require "pa/path"

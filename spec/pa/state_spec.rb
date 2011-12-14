@@ -1,7 +1,13 @@
 require "spec_helper"
 
 describe Pa do
-	describe "#chmod" do
-		#Pa("path_doesn't_exists").chmod(777)
-	end
+  it ".exists?" do
+    File.should_receive(:exists?).with("foo")
+    Pa.exists?("foo")
+  end
+
+  it "#exists?" do
+    File.should_receive(:exists?).with("foo")
+    Pa.new("foo").exists?
+  end
 end

@@ -1,10 +1,10 @@
 class Pa
   module State
     extend Util::Concern
-    module ClassMethods
-      # goes to File
-      FILE_DELEGATED_METHODS = [ :exists?, :atime, :ctime, :mtime, :stat, :lstat, :size, :zero?, :executable?, :executable_real?, :world_executable?, :readable?, :readable_real?, :world_readalbe?, :writeable?, :writeable_real?, :world_writeable?, :directory?, :file?, :blockdev?, :chardev?, :piple?, :socket?, :symlink?, :owned?, :grpowned?, :setgid?, :setuid?, :stricky?, :identical? ]
 
+    FILE_DELEGATED_METHODS = [ :exists?, :atime, :ctime, :mtime, :stat, :lstat, :size, :zero?, :executable?, :executable_real?, :world_executable?, :readable?, :readable_real?, :world_readalbe?, :writeable?, :writeable_real?, :world_writeable?, :directory?, :file?, :blockdev?, :chardev?, :piple?, :socket?, :symlink?, :owned?, :grpowned?, :setgid?, :setuid?, :stricky?, :identical? ]
+
+    module ClassMethods
       # delegated from File
       FILE_DELEGATED_METHODS.each { |name|
         module_eval <<-METHOD, __FILE__, __LINE__
@@ -82,6 +82,15 @@ class Pa
     end
 
     module InstanceMethods
+      # delegated from File
+      FILE_DELEGATED_METHODS.each { |name|
+        module_eval <<-METHOD, __FILE__, __LINE__
+          def #{name}(*args)
+            File.#{name}(*args, path)
+          end
+        METHOD
+      }
+
       def chmod(mode)
         File.chmod(mode, path) 
       end

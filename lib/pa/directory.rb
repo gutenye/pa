@@ -251,5 +251,17 @@ class Pa
         end
       end
     end
+
+    module InstanceMethods
+      # recommand to use Pa.each2 instead.
+      def each2(*args, &blk) 
+        Pa.each2(path, *args, &blk)
+      end
+
+      # recommand to use Pa.each instead.
+      def each(*args, &blk)
+        Pa.each(path, *args, &blk)
+      end
+    end
   end
 end
