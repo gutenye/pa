@@ -18,7 +18,7 @@ describe Pa do
 	end
 
   describe "#_ln" do
-    # filea
+    # lna
     before :all do
       FileUtils.touch(%w[lna])
     end

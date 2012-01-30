@@ -6,6 +6,8 @@ it combines fileutils, tmpdir, find, tempfile, File, Dir, Pathname
 
 all class methods support Pa as parameter.
 
+support "~/foo" path. Pa("~/foo") is "/home/x/foo"
+
 Examples:
 ---------
 	pa = Pa('/home/a.vim')
@@ -209,7 +211,8 @@ class Pa
 
 	# @param [String, #path] path
 	def initialize(path)
-		@path2 = Pa.get(path)
+    # convert ~ to ENV["HOME"]
+		@path2 = Pa.get(path).sub(/^~/, ENV["HOME"])
 
 		initialize_variables
   end

@@ -105,6 +105,12 @@ describe Pa do
     end
   end
 
+  describe "#initilaize" do
+    it "support ~/foo path" do
+      Pa.new("~/foo").should == Pa("#{ENV['HOME']}/foo")
+    end
+  end
+
   it "#absolute2" do
     Pa.new("foo.avi").absolute2.should == File.join(File.absolute_path("."), "foo.avi")
   end
