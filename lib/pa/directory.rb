@@ -141,10 +141,12 @@ class Pa
         end
 
       def each(*args, &blk)
+        return Pa.to_enum(:each, *args) unless blk
+
         args, o = Util.extract_options(args)
-        each2 *args, o do |path, err|
+        each2(*args, o) { |path, err|
           blk.call Pa(path), err
-        end
+        }
       end
 
       # each with recursive
@@ -267,15 +269,15 @@ class Pa
     end
 
     module InstanceMethods
-      # recommand to use Pa.each2 instead.
-      def each2(*args, &blk) 
-        Pa.each2(path, *args, &blk)
-      end
+      DELEGATE_METHODS = [:each2, :each, :each2_r, :each_r, :ls2, :ls]
 
-      # recommand to use Pa.each instead.
-      def each(*args, &blk)
-        Pa.each(path, *args, &blk)
-      end
+      DELEGATE_METHODS.each { |mth|
+        class_eval <<-EOF
+          def #{mth}(*args, &blk)
+            Pa.#{mth}(path, *args, &blk)
+          end
+        EOF
+      }
     end
   end
 end

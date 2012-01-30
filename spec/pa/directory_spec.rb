@@ -129,6 +129,10 @@ describe Pa do
 			Pa.each{|pa| ret << pa.p }
 			ret.sort.should == %w(.fa dira fa fa~)
     end
+
+		it "return a Enumerator when call without block" do
+			Pa.each.should be_an_instance_of Enumerator
+		end
   end
 
 	describe ".each2_r" do
@@ -223,50 +227,11 @@ describe Pa do
 		end
   end
 
-  describe "#each2" do
-		# dira/ fa
-		before(:each) do 
-			@dirs = %w(dira)
-			@files = %w(fa) 
-			FileUtils.mkdir_p(@dirs)
-			FileUtils.touch(@files)
-		end
-
-		after(:each) do 
-			FileUtils.rm @files
-			FileUtils.rm_r @dirs
-		end
-
-
+  describe "instance DELEGATE_METHODS" do
     it "works" do
-      ret = []
-      Pa.new(".").each2 {|p| ret << p }
+      Pa.should_receive(:each2).with("x", 1, 2)
 
-      ret.sort.should == %w[dira fa]
-    end
-  end
-
-  describe "#each" do
-		# dira/ fa
-		before(:each) do 
-			@dirs = %w(dira)
-			@files = %w(fa) 
-			FileUtils.mkdir_p(@dirs)
-			FileUtils.touch(@files)
-		end
-
-		after(:each) do 
-			FileUtils.rm @files
-			FileUtils.rm_r @dirs
-		end
-
-
-    it "works" do
-      ret = []
-      Pa.new(".").each {|p| ret << p.p }
-
-      ret.sort.should == %w[dira fa]
+      Pa("x").each2(1,2)
     end
   end
 end
-
