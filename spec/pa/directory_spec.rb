@@ -15,7 +15,7 @@ describe Pa do
 		Dir.chdir(@tmpdir)
 	end
 
-	after(:all) do
+	after :all do
 		Dir.chdir(@curdir)
 		FileUtils.rm_r @tmpdir
 	end
@@ -86,9 +86,18 @@ describe Pa do
 			Pa.each2.with_object([]){|(pa),m| m<<pa}.sort.should == %w(.fa dira fa fa~)
 		end
 
-		it "each2(nodot: true) -> list all files except dot file" do
-			Pa.each2(nodot: true).with_object([]){|(pa),m|m<<pa}.sort.should == %w(dira fa fa~)
+		it ".each2 with :dot => false -> list all files except dot file" do
+			Pa.each2(:dot => false).with_object([]){|(pa),m|m<<pa}.sort.should == %w[dira fa fa~]
 		end
+
+    it ".each2 with :backup => false" do
+      Pa.each2(:backup => false).with_object([]){|(pa),m|m<<pa}.sort.should == %w[.fa dira fa]
+    end
+
+    it ".each2 with :absolute => true" do
+      b = %w[.fa dira fa fa~].map{|v| File.join(Dir.pwd, v)}
+      Pa.each2(:absolute => true).with_object([]){|(pa),m|m<<pa}.sort.should == b
+    end
 
     it "each returns Pa" do
       Pa.each { |pa|
@@ -140,8 +149,13 @@ describe Pa do
 
 		it "each2_r -> Enumerator" do
 			Pa.each2_r.should be_an_instance_of Enumerator
-		 	Pa.each2_r.with_object([]){|(pa,r),m|m<<r}.sort.should == %w(.fa dira dira/dirb dira/dirb/b fa fa~)
+		 	Pa.each2_r.with_object([]){|(pa,r),m|m<<r}.sort.should == %w[.fa dira dira/dirb dira/dirb/b fa fa~]
 		end
+
+    it "with :absolute => true" do
+      Pa.each2_r(:absolute => true).to_a[0][0].should == File.join(Dir.pwd, "fa~")
+    end
+
 
     it "#each_r returns Pa" do
       Pa.each_r { |pa|
@@ -166,18 +180,48 @@ describe Pa do
 			FileUtils.rm_r @dirs
 		end
 
-		it "runs ok -> Array" do
-			Pa.ls2.should == ["filea", "dira"]
+		it "works" do
+			Pa.ls2.should == %w[filea dira]
+      Pa.ls2(Dir.pwd).should == %w[filea dira]
 		end
+
+    it "with :absolute => true" do
+      Pa.ls2(:absolute => true).should == %w[filea dira].map{|v| File.join(Dir.pwd, v)}
+    end
 
 		it "call a block" do
-			Pa.ls2 { |pa, fname| File.directory?(pa)  }.should == ["dira"]
+			Pa.ls2 { |p, fn| File.directory?(p)  }.should == ["dira"]
+		end
+  end
+
+  describe ".ls" do
+		# filea 
+		# dira/
+		# 	fileb
+		before(:each) do 
+			@dirs = %w(dira)
+			@files = %w(filea dira/fileb)
+			FileUtils.mkdir_p(@dirs)
+			FileUtils.touch(@files)
+		end
+		after(:each) do 
+			FileUtils.rm @files
+			FileUtils.rm_r @dirs
 		end
 
-    it "#ls returns string" do
-      Pa.ls[0].should be_an_instance_of String
+		it "works" do
+			Pa.ls.should == %w[filea dira].map{|v| Pa(v)}
+      Pa.ls(Dir.pwd).should == %w[filea dira].map{|v| Pa(v)}
+		end
+
+    it "with :absolute => true" do
+      Pa.ls(:absolute => true).should == %w[filea dira].map{|v| Pa(File.join(Dir.pwd, v))}
     end
-	end
+
+		it "call a block" do
+			Pa.ls{|p, fn| p.directory? }.should == %w[dira].map{|v| Pa(v)}
+		end
+  end
 
   describe "#each2" do
 		# dira/ fa
