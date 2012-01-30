@@ -19,28 +19,26 @@ class Pa
       #
       # @param [Array<String>, String] src_s support globbing
       # @param [String,Pa] dest
-      # @param [Hash] o option
-      # @option o [Boolean] :force overwrite if exists.
       # @return [nil]
       def ln(src_s, dest, o={})
-        _ln(File.method(:link), src_s, dest, o) 
+        _ln(:link, src_s, dest, o) 
       end
 
       # ln force
       #
       # @see ln
       # @return [nil]
-      def ln_f(src_s, dest, o)
+      def ln_f(src_s, dest, o={})
         o[:force]=true
-        _ln(File.method(:link), src_s, dest, o) 
+        _ln(:link, src_s, dest, o) 
       end
 
       # symbol link
       #
       # @see ln
       # @return [nil]
-      def symln(src_s, dest, o)
-        _ln(File.method(:symlink), src_s, dest, o) 
+      def symln(src_s, dest, o={})
+        _ln(:symlink, src_s, dest, o) 
       end
       alias symlink ln
 
@@ -48,11 +46,10 @@ class Pa
       #
       # @see ln
       # @return [nil]
-      def symln_f(src_s, dest, o)
+      def symln_f(src_s, dest, o={})
         o[:force]=true
-        _ln(File.method(:symlink), src_s, dest, o) 
+        _ln(:symlink, src_s, dest, o) 
       end
-
 
       # @see File.readlink
       def readlink(path)
@@ -62,17 +59,25 @@ class Pa
       # change directory
       #
       # @param [String,Pa] path
-      def cd(path=ENV["HOME"], &blk)
-        Dir.chdir(get(path), &blk) 
+      # @param [Hash] o
+      # @option o [Boolean] :verbose verbose mode
+      def cd(path=ENV["HOME"], o={}, &blk)
+        p = get(path)
+        puts "cd #{p}" if o[:verbose]
+        Dir.chdir(p, &blk) 
       end
 
       # chroot
       # @see {Dir.chroot}
       #
       # @param [String] path
+      # @param [Hash] o
+      # @option o [Boolean] :verbose verbose mode
       # @return [nil]
-      def chroot(path)
-        Dir.chroot(get(path)) 
+      def chroot(path, o={})
+        p = get(path)
+        puts "chdroot #{p}" if o[:verbose]
+        Dir.chroot(p)
       end
 
       # touch a blank file
@@ -83,10 +88,11 @@ class Pa
       #   @option o [Fixnum,String] :mode
       #   @option o [Boolean] :mkdir auto mkdir if path contained directory not exists.
       #   @option o [Boolean] :force 
+      #   @option o [Boolean] :verbose 
       #   @return [nil]
       def touch(*args)
         paths, o = Util.extract_options(args)
-        _touch(*paths, o) 
+        _touch(paths, o) 
       end
 
       # touch force
@@ -96,8 +102,8 @@ class Pa
       #   @return [nil]
       def touch_f(*args)
         paths, o = Util.extract_options(args)
-        o[:force]=true
-        _touch(*paths, o) 
+        o[:force] = true
+        _touch(paths, o) 
       end
 
       # make a directory
@@ -107,6 +113,7 @@ class Pa
       #   @param [Hash] o option
       #   @option o [Fixnum] :mode
       #   @option o [Boolean] :force
+      #   @option o [Boolean] :verbose
       #   @return [nil]
       def mkdir(*args)
         paths, o = Util.extract_options(args)
@@ -130,9 +137,13 @@ class Pa
       # @option o [Symbol] :prefix ("")
       # @option o [Symbol] :suffix ("")
       # @option o [Symbol] :tmpdir (ENV["TEMP"])
+      # @option o [Symbol] :verbose
       # @return [String] path
       def mktmpdir(o={}, &blk) 
         p = _mktmpname(o)
+
+        puts "mktmpdir #{p}" if o[:verbose]
+
         File.mkdir(p)
         begin blk.call(p) ensure Dir.delete(p) end if blk
         p
@@ -146,9 +157,13 @@ class Pa
       # @see mktmpdir
       #
       # @param [Hash] o options
+      # @option o [Boolean] :verbose
       # @return [String] path
       def mktmpfile(o={}, &blk) 
         p = _mktmpname(o) 
+
+        puts "mktmpfile #{p}" if o[:verbose]
+
         begin 
           blk.call(p) 
         ensure
@@ -160,11 +175,16 @@ class Pa
 
       # rm file only
       #
-      # @param [String] *paths support globbing
+      # @overload rm(*paths, o={})
+      #   @param [String] *paths support globbing
+      #   @param o [Boolean] :verbose
       # @return [nil]
       def rm(*paths)
         paths, o = Util.extract_options(paths)
         glob(*paths) { |pa|
+          extra_doc = o[:force] ? "-f " : nil
+          puts "rm #{extra_doc}#{pd.p}" if o[:verbose]
+
           if File.directory?(pa.p)
             if o[:force]
               next 
@@ -190,6 +210,9 @@ class Pa
       def rmdir(*paths)
         paths, o = Util.extract_options(paths)
         glob(*paths) { |pa|
+          extra_doc = o[:force] ? "-f " : nil
+          puts "rmdir #{extra_doc}#{pa.p}" if o[:verbose]
+
           if not File.directory?(pa.p)
             if o[:force]
               next 
@@ -212,7 +235,9 @@ class Pa
       # @see rm
       # @return [nil]
       def rm_r(*paths)
+        paths, o = Util.extract_options(paths)
         glob(*paths){ |pa|
+          puts "rm -r #{pa.p}" if o[:verbose]
           File.directory?(pa.p)  ? _rmdir(pa) : File.delete(pa.p)
         }
       end
@@ -231,8 +256,9 @@ class Pa
       # @yieldreturn [Boolean] rm_r path if true
       # @return [nil]
       def rm_if(*paths, &blk)
+        paths, o = Util.extract_options(paths)
         glob(*paths) do |pa|
-          rm_r pa if blk.call(pa)
+          rm_r pa, o if blk.call(pa)
         end
       end
 
@@ -366,9 +392,12 @@ class Pa
       def _touch(paths, o)
         o[:mode] ||= 0644
         paths.map!{|v|get(v)}
-        paths.each {|path|
-          if File.exists?(path) 
-            o[:force] ? next : raise(Errno::EEXIST, "File exist -- #{path}")
+        paths.each {|p|
+          extra_doc = o[:force] ? "-f " : nil
+          puts "touch #{extra_doc}#{p}" if o[:verbose]
+
+          if File.exists?(p) 
+            o[:force] ? next : raise(Errno::EEXIST, "File exist -- #{p}")
           end
 
           mkdir(File.dirname(p)) if o[:mkdir]
@@ -382,22 +411,29 @@ class Pa
         }
       end
 
-        # @param [Array,String,#path] src_s
-        # @param [String,#path] dest
-        def _ln(method, src_s, dest, o={})
-          dest = get(dest)
-          glob(*Util.wrap_array(src_s)) {|src|
-            src = get(src)
-            dest = File.join(dest, File.basename(src)) if File.directory?(dest)
-            Pa.rm_r(dest) if o[:force] and File.exists?(dest)
-            method.call(src, dest)
-          }	
-        end
+      # @param [Array,String,#path] src_s
+      # @param [String,#path] dest
+      def _ln(method, src_s, dest, o={})
+        dest = get(dest)
+        glob(*Util.wrap_array(src_s)) {|src|
+          src = get(src)
+          dest = File.join(dest, File.basename(src)) if File.directory?(dest)
+          Pa.rm_r(dest) if o[:force] and File.exists?(dest)
+          extra_doc = "" 
+          extra_doc << method==:symlink ? "-s " : ""
+          extra_doc << o[:force] ? "-f " : ""
+          puts "ln #{extra_doc}#{src} #{dest}" if o[:verbose]
+
+          File.send(method, src, dest)
+        }	
+      end
 
       def _mkdir(paths, o)
         o[:mode] ||= 0744
         paths.map!{|v|get(v)}
         paths.each {|p|
+          puts "mkdir #{p}" if o[:verbose]
+
           if File.exists?(p)
             o[:force] ? next : raise(Errno::EEXIST, "File exist -- #{p}")
           end
@@ -462,8 +498,7 @@ class Pa
 
         when "directory"
           begin
-            Pa.mkdir dest
-            puts "mkdir #{dest}" if o[:verbose]
+            Pa.mkdir dest, :verbose => o[:verbose]
           rescue Errno::EEXIST
           end
 
@@ -477,8 +512,7 @@ class Pa
           if o[:folsymlink] 
             _copy(Pa.readlink(src), dest) 
           else
-            Pa.symln(Pa.readlink(src), dest, force: true)	
-            puts "symlink #{src} #{dest}" if o[:verbose]
+            Pa.symln(Pa.readlink(src), dest, :force => true, :verbose => o[:verbose])	
           end
 
         when "unknow"

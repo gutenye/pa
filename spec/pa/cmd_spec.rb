@@ -3,7 +3,7 @@ require "fileutils"
 require "tmpdir"
 
 module Pa::Cmd::ClassMethods
-	public :_copy, :_touch, :_mkdir, :_mktmpname, :_rmdir, :_copy, :_move
+	public :_copy, :_touch, :_mkdir, :_mktmpname, :_rmdir, :_copy, :_move, :_ln
 end
 
 describe Pa do
@@ -12,11 +12,26 @@ describe Pa do
 		@tmpdir = Dir.mktmpdir
 		Dir.chdir(@tmpdir)
 	end
-
-	after(:all) do
+	after :all do
 		Dir.chdir(@curdir)
 		FileUtils.rm_r @tmpdir
 	end
+
+  describe "#_ln" do
+    # filea
+    before :all do
+      FileUtils.touch(%w[lna])
+    end
+
+    it "works" do
+      output = capture :stdout do
+        Pa._ln(:link, "lna", "lnb", "doc", :verbose => true) 
+      end
+
+      output.should == "doc lna lnb\n"
+      File.identical?("lna", "lnb").should be_true
+    end
+  end
 
 	describe "#_rmdir" do
 		# dir/
@@ -138,7 +153,6 @@ describe Pa do
 		end
 
 		context "with :symlink" do
-
 			it "_copy" do
 				Pa._copy 'symfile', 'symfilea'
 				File.symlink?('symfilea').should be_true
