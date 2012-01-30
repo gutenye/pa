@@ -26,6 +26,12 @@ describe Pa do
     end
   end
 
+  describe ".tmpdir" do
+    it "works" do
+      Pa.tmpdir.should == Pa(Dir.tmpdir)
+    end
+  end
+
 	describe ".glob2" do
 		before(:each) do 
 			@files = %w(fa .fa)

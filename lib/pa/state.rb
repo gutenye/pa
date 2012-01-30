@@ -64,7 +64,6 @@ class Pa
         end
       end # def type
 
-
       # is path a mountpoint?
       #
       # @param[String] path

@@ -97,64 +97,11 @@ describe Pa do
     end
   end
 
-  describe ".method_missing" do
+  describe "class DELEGATE_METHODS" do
+    it "works" do
+      Pa.stub(:build2){|arg| arg }
 
-    it ".foo goto .foo2" do
-      class Pa
-        def self.guten_a2
-          "bbz"
-        end
-      end
-
-      Pa.guten_a.should == Pa.new("bbz")
-    end
-
-    it "raise NoMethodError" do
-      lambda { Pa.guten_not_exists }.should raise_error(NoMethodError)
-    end
-  end
-
-  describe "#method_missing" do
-    before :all do
-      class Pa
-        def self.foo2; ".foo2" end
-        def foo2     ; "#foo2" end
-        def self.baz2; ".baz2" end
-        def self.bar2; ".bar2" end
-
-        def self.foo2?; ".foo2?" end
-        def foo2?     ; "#foo2?" end
-        def self.baz2?; ".baz2?" end
-        def self.bar2?; ".bar2?" end
-      end
-    end
-
-    it "#foo goto #foo2" do
-      Pa.new("x").foo.should == Pa.new("#foo2")
-    end
-
-    it "#baz2 goto .baz2" do
-      Pa.new("x").baz2.should == ".baz2"
-    end
-
-    it "#bar goto .bar2" do
-      Pa.new("x").bar.should == Pa.new(".bar2")
-    end
-
-    it "#foo? goto #foo2?" do
-      Pa.new("x").foo?.should == Pa.new("#foo2?")
-    end
-
-    it "#baz2? goto .baz2?" do
-      Pa.new("x").baz2?.should == ".baz2?"
-    end
-
-    it "#bar? goto .bar2?" do
-      Pa.new("x").bar?.should == Pa.new(".bar2?")
-    end
-
-    it "raise NoMethodError" do
-      lambda { Pa.new("x").guten_not_exists }.should raise_error(NoMethodError)
+      Pa.build("foo").should == Pa("foo")
     end
   end
 
@@ -297,4 +244,13 @@ describe Pa do
       Pa.new("/home/guten.avi").build2(fext: ".ogg", ext: "mp3").should == "/home/guten.ogg"
     end
   end
+
+  describe "instance DELEGATE_METHODS" do
+    it "works" do
+      Pa.stub(:build2) { "foo" }
+
+      Pa.new("foo").build.should == Pa("foo")
+    end
+  end
+
 end

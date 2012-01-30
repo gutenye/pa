@@ -73,6 +73,8 @@ class Pa
 	EUnkonwType = Class.new Error
 
   class << self
+    DELEGATE_METHODS = [:join, :build]
+
     # get path of an object. 
     #
     # return obj#path if object has a 'path' instance method
@@ -161,13 +163,13 @@ class Pa
       blk.call(Pa(path))
     end
 
-    # .foo -> .foo2
-    def method_missing(name, *args, &blk)
-      name2 = "#{name}2".to_sym
-      return _wrap(__send__(name2, *args, &blk)) if public_methods.include?(name2)
-
-      raise NoMethodError, "no class method -- #{name}"
-    end
+    DELEGATE_METHODS.each { |mth| 
+      class_eval <<-EOF
+        def #{mth}(*args, &blk)
+          Pa(Pa.#{mth}2(*args, &blk))
+        end
+      EOF
+    }
 
   private
 
@@ -180,7 +182,6 @@ class Pa
         Pa(obj)
       end
     end
-
 
     def build_path2(data={})
       if data[:path]
@@ -199,6 +200,8 @@ class Pa
       path
     end
   end
+
+  DELEGATE_METHODS = [ :dir, :build ]
 
 	attr_reader :path2
   attr_reader :absolute2, :dir2, :dir_strict2, :base2, :fname2, :name2, :short2, :ext2, :fext2
@@ -308,28 +311,6 @@ class Pa
 		initialize_variables
 	end
 
-	def method_missing(name, *args, &blk)
-    # #foo2 goto .foo2
-    case name
-    when /2[?!]?$/
-      return Pa.__send__(name, *args, &blk) if Pa.public_methods.include?(name)
-
-    # #foo goto #foo2 or .foo2
-    # #foo? is #foo2?
-    else
-      name, extra = name.to_s.match(/(.*?)([?!])?$/).captures
-      name = "#{name}2#{extra}".to_sym
-
-      if Pa.instance_methods.include?(name)
-        return Pa.__send__(:_wrap, __send__(name, *args, &blk))
-      elsif Pa.public_methods.include?(name)
-        return Pa.__send__(:_wrap, Pa.__send__(name, *args, &blk))
-      end
-    end
-
-    raise NoMethodError, "no instance method -- #{name}"
-  end
-
   def ==(other)
     case other
     when Pa
@@ -423,6 +404,13 @@ class Pa
     Pa.build2(d)
   end
 
+  DELEGATE_METHODS.each {|mth|
+    class_eval <<-EOF
+      def #{mth}(*args, &blk)
+        Pa(#{mth}2(*args, &blk))
+      end
+    EOF
+  }
 end
 
 require "pa/path"

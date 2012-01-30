@@ -16,6 +16,8 @@ class Pa
     extend Util::Concern
 
     module ClassMethods
+      DELEGATE_METHODS = [:pwd, :dir, :absolute, :expand, :real, :parent]
+
       # return current work directory
       # @return [String] path
       def pwd2
@@ -47,7 +49,6 @@ class Pa
         end
       end # def dsymlink?
 
-
       def dir2(path)
         File.dirname(path)
       end
@@ -73,6 +74,16 @@ class Pa
         end
       end
 
+      def base(*args, &blk)
+        rst = base2(*args, &blk)
+
+        if Array===rst
+          [ Pa(rst[0]), rst[1] ]
+        else
+          rst
+        end
+      end
+
       # ext of a path
       #
       # @example
@@ -85,6 +96,8 @@ class Pa
         _, ext = get(path).match(/\.([^.]+)$/).to_a
         ext
       end
+
+      alias ext ext2
 
       # alias from File.absolute_path
       # @param [String,Pa] path
@@ -109,6 +122,8 @@ class Pa
         get(path).sub /^#{Regexp.escape(ENV["HOME"])}/, "~"
       end
 
+      alias shorten shorten2
+
       # real path
       def real2(path) 
         File.realpath get(path)
@@ -126,7 +141,16 @@ class Pa
         end
         path
       end
-       
+
+      DELEGATE_METHODS.each { |mth|
+        mth2 = "#{mth}2"
+
+        class_eval <<-EOF
+          def #{mth}(*args, &blk)
+            Pa(Pa.#{mth2}(*args, &blk))
+          end
+        EOF
+      }
     end
   end
 end

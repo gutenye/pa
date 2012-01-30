@@ -11,10 +11,6 @@ describe Pa do
     end
   end
 
-  it ".dir => Pa" do
-    Pa.dir("/home/guten").should be_an_instance_of Pa
-  end
-
   it ".dir2 => String" do
     Pa.dir2("/home/guten").should be_an_instance_of String
   end
@@ -59,6 +55,12 @@ describe Pa do
 			Pa.base2("/home/foo.bar", ext: true).should == ["foo", "bar"]
 		end
 	end
+
+  describe ".base" do
+    it "works" do
+			Pa.base("/home/foo.bar", ext: true).should == [Pa("foo"), "bar"]
+    end
+  end
 
   describe ".ext2" do
     it "get a path's extension" do
@@ -115,4 +117,12 @@ describe Pa do
 			Pa.parent2(@path, 2).should == "/home"
 		end
 	end
+
+  describe "class DELEGATE_METHODS" do
+    it "works" do
+      Pa.should_receive(:pwd2).with(1,2)
+
+      Pa.pwd(1,2)
+    end
+  end
 end
