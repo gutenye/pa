@@ -1,9 +1,9 @@
-source "http://rubygems.org"
+source :rubygems
 
 group :development do
-	gem "thor"
-	gem "rspec"
-	gem "watchr"
+  gem "thor"
+  gem "rspec"
+  gem "watchr"
 end
 
 #gemspec

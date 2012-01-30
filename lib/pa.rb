@@ -201,7 +201,8 @@ class Pa
     end
   end
 
-  DELEGATE_METHODS = [ :dir, :build ]
+  DELEGATE_METHODS2 = [ :join2 ]
+  DELEGATE_METHODS = [ :dir, :build, :join ]
 
 	attr_reader :path2
   attr_reader :absolute2, :dir2, :dir_strict2, :base2, :fname2, :name2, :short2, :ext2, :fext2
@@ -403,6 +404,14 @@ class Pa
 
     Pa.build2(d)
   end
+
+  DELEGATE_METHODS2.each { |mth2|
+    class_eval <<-EOF
+      def #{mth2}(*args, &blk)
+        Pa.#{mth2}(path, *args, &blk)
+      end
+    EOF
+  }
 
   DELEGATE_METHODS.each {|mth|
     class_eval <<-EOF

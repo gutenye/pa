@@ -245,6 +245,13 @@ describe Pa do
     end
   end
 
+  describe "instance DELEGATE_METHODS2" do
+    it "works" do
+      Pa.stub(:join2) { "foo" }
+      Pa.new("foo").join2.should == "foo"
+    end
+  end
+
   describe "instance DELEGATE_METHODS" do
     it "works" do
       Pa.stub(:build2) { "foo" }
