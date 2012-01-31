@@ -212,7 +212,8 @@ class Pa
 	# @param [String, #path] path
 	def initialize(path)
     # convert ~ to ENV["HOME"]
-		@path2 = Pa.get(path).sub(/^~/, ENV["HOME"])
+		@path2 = Pa.get(path)
+    @path2.sub!(/^~/, ENV["HOME"]) if @path2 # nil
 
 		initialize_variables
   end

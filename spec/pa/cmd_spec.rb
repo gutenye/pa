@@ -25,10 +25,10 @@ describe Pa do
 
     it "works" do
       output = capture :stdout do
-        Pa._ln(:link, "lna", "lnb", "doc", :verbose => true) 
+        Pa._ln(:link, "lna", "lnb", :verbose => true) 
       end
 
-      output.should == "doc lna lnb\n"
+      output.should == "ln lna lnb\n"
       File.identical?("lna", "lnb").should be_true
     end
   end
@@ -282,4 +282,38 @@ describe Pa do
 			File.exists?("dir/b").should be_true
 		end
 	end
+
+  describe "#_mktmpname" do
+    it "works" do
+      path = Pa._mktmpname("foo", :tmpdir => "guten")
+
+      path.should =~ %r~guten/foo\..{6}~
+    end
+  end
+
+  describe "#mktmpdir" do
+    it "works" do
+      File.should_receive(:mkdir)
+
+      path = Pa.mktmpdir("foo")
+
+      path.should =~ %r~#{Regexp.escape(ENV["TEMP"])}/foo~
+    end
+  end
+
+  describe "#mktmpfile2" do
+    it "works" do
+      path = Pa.mktmpfile2 :tmpdir => "foo"
+
+      path.should =~ %r~foo/#{$$}~
+    end
+  end
+
+  describe "#mktmpfile" do
+    it "works" do
+      path = Pa.mktmpfile
+
+      path.should be_an_instance_of(Pa)
+    end
+  end
 end

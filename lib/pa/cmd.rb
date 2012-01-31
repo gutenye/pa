@@ -1,3 +1,5 @@
+require "securerandom"
+
 =begin
 rm family
 	* rm     _rm file only_
@@ -133,35 +135,45 @@ class Pa
 
       # make temp directory
       #
-      # @param [Hash] o options
-      # @option o [Symbol] :prefix ("")
-      # @option o [Symbol] :suffix ("")
-      # @option o [Symbol] :tmpdir (ENV["TEMP"])
-      # @option o [Symbol] :verbose
-      # @return [String] path
-      def mktmpdir(o={}, &blk) 
-        p = _mktmpname(o)
+      # @overload mktmpdir(name, o={}, &blk)
+      #   @param [Hash] o options
+      #   @option o [String] :tmpdir (ENV["TEMP"])
+      #   @option o [Symbol] :verbose
+      #   @return [String] path
+      # @overload mktmpdir(o={}, &blk) # name=$$
+      def mktmpdir(*args, &blk)
+        (name,), o = Util.extract_options(args)
 
+        p = _mktmpname(name, o)
         puts "mktmpdir #{p}" if o[:verbose]
 
         File.mkdir(p)
-        begin blk.call(p) ensure Dir.delete(p) end if blk
+
+        begin 
+          blk.call(p) 
+        ensure 
+          Dir.delete(p) 
+        end if blk
+
         p
       end # def mktmpdir
 
-      def home(user=nil)
+      def home
         Dir.home 
       end
 
       # make temp file
       # @see mktmpdir
       #
-      # @param [Hash] o options
-      # @option o [Boolean] :verbose
-      # @return [String] path
-      def mktmpfile(o={}, &blk) 
-        p = _mktmpname(o) 
+      # @overload mktmpfile2(name=$$, o={}, &blk)
+      #   @param [Hash] o options
+      #   @option o [Boolean] :verbose
+      #   @option o [String] :tmpdir
+      #   @return [String] path
+      def mktmpfile2(*args, &blk) 
+        (name,), o = Util.extract_options(args)
 
+        p = _mktmpname(name, o) 
         puts "mktmpfile #{p}" if o[:verbose]
 
         begin 
@@ -169,9 +181,25 @@ class Pa
         ensure
           File.delete(p)
         end if blk
-        p
-      end # mktmpfile
 
+        p
+      end
+
+      # @return [Pa] path
+      def mktmpfile(*args, &blk)
+        (name,), o = Util.extract_options(args)
+
+        p = _mktmpname(name, o) 
+        puts "mktmpfile #{p}" if o[:verbose]
+
+        begin 
+          blk.call(Pa(p)) 
+        ensure
+          File.delete(p)
+        end if blk
+
+        Pa(p)
+      end
 
       # rm file only
       #
@@ -420,8 +448,8 @@ class Pa
           dest = File.join(dest, File.basename(src)) if File.directory?(dest)
           Pa.rm_r(dest) if o[:force] and File.exists?(dest)
           extra_doc = "" 
-          extra_doc << method==:symlink ? "-s " : ""
-          extra_doc << o[:force] ? "-f " : ""
+          extra_doc << (method==:symlink ? "-s " : "")
+          extra_doc << (o[:force] ? "-f " : "")
           puts "ln #{extra_doc}#{src} #{dest}" if o[:verbose]
 
           File.send(method, src, dest)
@@ -452,23 +480,15 @@ class Pa
         }
       end
 
-      def _mktmpname(o={})
-        # :prefix :suffix :tmpdir
-        # $$-(time*100_000).to_i.to_s(36)
-        # parse o
-        o[:dir] ||= ENV["TEMP"]
-        o[:prefix] ||= ""
-        o[:suffix] ||= ""
+      # <name>.JNBNZG
+      def _mktmpname(name=nil, o={})
+        o[:tmpdir] ||= ENV["TEMP"]
+        name ||= $$
 
-        # begin
-        collision = 0
-        path = "#{o[:dir]}/#{o[:prefix]}#{$$}-#{(Time.time*100_000).to_i.to_s(36)}"
-        orgi_path = path.dup
-        while File.exists?(path)
-          path = orgi_path+ collision.to_s
-          collision +=1
-        end
-        path << o[:suffix]
+        begin
+          random = SecureRandom.hex(3).upcase
+          path = "#{o[:tmpdir]}/#{name}.#{random}"
+        end while File.exists?(path)
 
         path
       end # def mktmpname
