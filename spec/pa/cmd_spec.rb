@@ -10,134 +10,379 @@ describe Pa do
 	before :all do
 		@curdir = Dir.pwd
 		@tmpdir = Dir.mktmpdir
-		Dir.chdir(@tmpdir)
+		Dir.chdir @tmpdir
 	end
+
 	after :all do
-		Dir.chdir(@curdir)
+		Dir.chdir @curdir
 		FileUtils.rm_r @tmpdir
 	end
 
+  # clean up directory after each run
+  after :each do
+    FileUtils.rm_r Dir.glob("*", File::FNM_DOTMATCH)-%w[. ..]
+  end
+
+  describe "#home2" do
+    it "works" do
+      Pa.home2.should == Dir.home
+    end
+  end
+
   describe "#_ln" do
-    # lna
-    before :all do
-      FileUtils.touch(%w[lna])
+    # _lna
+    before :each do
+      FileUtils.touch %w[_lna]
     end
 
     it "works" do
       output = capture :stdout do
-        Pa._ln(:link, "lna", "lnb", :verbose => true) 
+        Pa._ln(:link, "_lna", "_lnb", :verbose => true) 
       end
 
-      output.should == "ln lna lnb\n"
-      File.identical?("lna", "lnb").should be_true
+      output.should == "ln _lna _lnb\n"
+      File.identical?("_lna", "_lnb").should be_true
     end
   end
 
-	describe "#_rmdir" do
-		# dir/
-		#   a
-		#  dira/
-		#    aa
-		before(:all) do	
-			@_rmdir = Pa.method(:_rmdir)
-			FileUtils.mkdir_p(%w(dir/dira))
-			FileUtils.touch(%w(dir/a dir/dira/aa))
-		end
+  describe "#ln" do
+    # file1
+    before :each do
+      FileUtils.touch %w[file1]
+    end
 
-		it "remove directory" do
-			@_rmdir.call Pa("dir")
-			File.exists?("dir").should be_false
-		end
-	end
+    it "works" do
+      Pa.ln("file1", "lna")
+      File.identical?("file1", "lna").should be_true
 
-	# rm family
-	describe "" do
-		# a
-		# dir/ 
-		#   dira/
-		#   a 
-		before :each do
-			FileUtils.mkdir_p(%w(dir/dira))
-			FileUtils.touch(%w(a dir/a))
-		end
+      Pa.ln(Pa("file1"), Pa("lnb"))
+      File.identical?("file1", "lnb").should be_true
+    end
+  end
 
-		describe "#rm" do
-			it "remove file" do
-				Pa.rm "a"
-				File.exists?("a").should be_false
-				lambda{Pa.rm("dir")}.should raise_error(Errno::EISDIR)
-			end
-		end
+  describe "#ln_f" do
+    # file1
+    # file2
+    # file3
+    before :each do
+      FileUtils.touch %w[file1 file2 file3]
+    end
 
-		describe "#rm_f" do
-			it "remove file force" do
-				lambda{Pa.rm_f("dir")}.should_not raise_error(Errno::EISDIR)
-			end
-		end
+    it "works" do
+      Pa.ln_f("file1", "file2")
+      File.identical?("file1", "file2").should be_true
 
-		describe "#rmdir" do
-			it "remove directory" do
-				Pa.rmdir "dir"
-				File.exists?("dir").should be_false
-				lambda{Pa.rmdir("a")}.should raise_error(Errno::ENOTDIR)
-			end
-		end
+      Pa.ln_f(Pa("file1"), Pa("file3"))
+      File.identical?("file1", "file3").should be_true
+    end
+  end
 
-		describe "#rmdir_f" do
-			it "remove directory force" do
-				lambda{Pa.rmdir_r("a")}.should_not raise_error(Errno::ENOTDIR) 
-			end
-		end
+  describe "#symln" do
+    # file1
+    before :each do
+      FileUtils.touch %w[file1]
+    end
 
-		describe "#rm_r" do
-			it "remove both file and directory" do
-				Pa.rm "a"
-				File.exists?("a").should be_false
-				Pa.rm_r "dir"
-				File.exists?("dir").should be_false
-			end
-		end
+    it "works" do
+      Pa.symln("file1", "syma")
+      File.symlink?("syma").should be_true
 
-		describe "#rm_if" do
-			it "remove if condition" do
-				Pa.rm_if "." do |pa|
-					next if pa.p=="a"
-					yield if pa.b=="a"
-				end
+      Pa.symln(Pa("file1"), Pa("symb"))
+      File.symlink?("symb").should be_true
+    end
+  end
 
-			File.exists?("a").should be_true 
-			File.exists?("dir/dira/a").should be_false
-		end
-	end
+  describe "#symln_f" do
+    # file1 
+    # file2
+    # file3
+    before :each do
+      FileUtils.touch %w[file1 file2 file3]
+    end
 
-	end
+    it "works" do
+      Pa.symln_f("file1", "file2")
+      File.symlink?("file2").should be_true
+
+      Pa.symln_f(Pa("file1"), Pa("file3"))
+      File.symlink?("file3").should be_true
+    end
+  end
+
+  describe "#readlink" do
+    # syma -> file1
+    before :each do
+      FileUtils.touch %w[file1]
+      File.symlink "file1", "syma"
+    end
+
+    it "works" do
+      Pa.readlink("syma").should == "file1"
+      Pa.readlink(Pa("syma")).should == "file1"
+    end
+  end
+
+  describe "#cd" do
+    # dir1/
+    before :each do
+      FileUtils.mkdir_p %w[dir1]
+    end
+    
+    after :each do
+      Dir.chdir @tmpdir
+    end
+
+    it "works" do
+      Pa.cd("dir1")
+      Dir.pwd.should == File.join(@tmpdir, "dir1")
+    end
+  end
+
+  describe "#chroot" do
+    it "works" do
+      Dir.should_receive(:chroot).with("dir1")
+      Pa.chroot "dir1"
+
+      Dir.should_receive(:chroot).with("dir2")
+      Pa.chroot Pa("dir2")
+    end
+  end
+
+  describe "#_touch" do
+    it "works" do
+      Pa._touch ["file1", Pa("file2")], {}
+
+      File.exists?("file1").should be_true
+      File.exists?("file2").should be_true
+    end
+  end
+
+  describe "#touch" do
+    it "works" do
+      Pa.touch("file1", "file2")
+
+      File.exists?("file1").should be_true
+      File.exists?("file2").should be_true
+    end
+  end
+
+  describe "#touch" do
+    # file1
+    # file2
+    before :each do
+      FileUtils.touch %w[file1 file2]
+    end
+
+    it "works" do
+      Pa.touch_f("file1", "file2")
+
+      File.exists?("file1").should be_true
+      File.exists?("file2").should be_true
+    end
+  end
 
 	describe "#mkdir" do
-		after :each do
-			FileUtils.rm_r Dir["*"]-%w(. ..)
-		end
-
 		it "mkdir" do
 			Pa.mkdir("guten/tag")
 			File.exists?("guten/tag").should be_true
 		end
 	end
 
+	describe "#mkdir_f" do
+    # dir1/dira
+    before :each do
+      FileUtils.mkdir_p %w[dir1/dira]
+    end
+
+		it "mkdir" do
+			Pa.mkdir_f "dir1/dira"
+		end
+	end
+
+  describe "#_mktmpname" do
+    it "works" do
+      path = Pa._mktmpname("foo", :tmpdir => "guten")
+
+      path.should =~ %r~guten/foo\..{6}~
+    end
+  end
+
+  describe "#mktmpdir" do
+    it "works" do
+      Dir.should_receive(:mkdir)
+
+      path = Pa.mktmpdir("foo")
+
+      path.should =~ %r~#{Regexp.escape(ENV["TEMP"])}/foo~
+    end
+  end
+
+  describe "#mktmpfile2" do
+    it "works" do
+      path = Pa.mktmpfile2 :tmpdir => "foo"
+
+      path.should =~ %r~foo/#{$$}~
+    end
+  end
+
+  describe "#mktmpfile" do
+    it "works" do
+      path = Pa.mktmpfile
+
+      path.should be_an_instance_of(Pa)
+    end
+  end
+
+	describe "#_rmdir" do
+		# dir/
+		#   a
+		#  dir1/
+		#    aa
+		before :each do	
+			FileUtils.mkdir_p %w[dir/dir1]
+			FileUtils.touch %w[dir/a dir/dir1/aa]
+		end
+
+		it "remove directory" do
+			Pa._rmdir Pa("dir")
+			File.exists?("dir").should be_false
+		end
+	end
+
+  describe "#rm" do
+    # rm family
+    # a
+    # dir/ 
+    #   dir1/
+    #   a 
+    before :each do
+      FileUtils.mkdir_p %w[dir/dir1]
+      FileUtils.touch %w[a dir/a]
+    end
+
+    it "remove file" do
+      Pa.rm "a"
+      File.exists?("a").should be_false
+      lambda{Pa.rm("dir")}.should raise_error(Errno::EISDIR)
+    end
+  end
+
+  describe "#rm_f" do
+    # rm family
+    # a
+    # dir/ 
+    #   dir1/
+    #   a 
+    before :each do
+      FileUtils.mkdir_p %w[dir/dir1]
+      FileUtils.touch %w[a dir/a]
+    end
+
+    it "remove file force" do
+      lambda{Pa.rm_f("dir")}.should_not raise_error(Errno::EISDIR)
+    end
+  end
+
+  describe "#rmdir" do
+    # rm family
+    # a
+    # dir/ 
+    #   dir1/
+    #   a 
+    before :each do
+      FileUtils.mkdir_p %w[dir/dir1]
+      FileUtils.touch %w[a dir/a]
+    end
+
+    it "remove directory" do
+      Pa.rmdir "dir"
+      File.exists?("dir").should be_false
+      lambda{Pa.rmdir("a")}.should raise_error(Errno::ENOTDIR)
+    end
+  end
+
+  describe "#rmdir_f" do
+    # rm family
+    # a
+    # dir/ 
+    #   dir1/
+    #   a 
+    before :each do
+      FileUtils.mkdir_p %w[dir/dir1]
+      FileUtils.touch %w[a dir/a]
+    end
+
+    it "remove directory force" do
+      lambda{Pa.rmdir_r("a")}.should_not raise_error(Errno::ENOTDIR) 
+    end
+  end
+
+  describe "#rm_r" do
+    # rm family
+    # a
+    # dir/ 
+    #   dir1/
+    #   a 
+    before :each do
+      FileUtils.mkdir_p %w[dir/dir1]
+      FileUtils.touch %w[a dir/a]
+    end
+
+    it "remove both file and directory" do
+      Pa.rm "a"
+      File.exists?("a").should be_false
+      Pa.rm_r "dir"
+      File.exists?("dir").should be_false
+    end
+  end
+
+  describe "#rm_if" do
+    # rm family
+    # a
+    # dir/ 
+    #   dir1/
+    #   a 
+    before :each do
+      FileUtils.mkdir_p %w[dir/dir1]
+      FileUtils.touch %w[a dir/a]
+    end
+
+    it "remove if condition" do
+      Pa.rm_if(".") { |pa|
+        next if pa.p=="a"
+        yield if pa.b=="a"
+      }
+
+    File.exists?("a").should be_true 
+    File.exists?("dir/dir1/a").should be_false
+    end
+  end
+
 	describe "#_copy" do
+    # rm family
+    # a
+    # dir/ 
+    #   dir1/
+    #   a 
+    before :each do
+      FileUtils.mkdir_p %w[dir/dir1]
+      FileUtils.touch %w[a dir/a]
+    end
+
 		# a symfile
 		# ab
 		# ac
 		# dir/ 
 		#   b   # guten
-		#   dira/
+		#   dir1/
 		#     c
 		# destdir/
 		#   b  # tag
 		#   dir/ 
-		before :all do
-			FileUtils.mkdir_p(%w(dir/dira destdir/dir))
-			FileUtils.touch(%w(a ab ac dir/b dir/dira/c destdir/dir/b))
-			File.symlink("a", "symfile")
+		before :each do
+			FileUtils.mkdir_p %w[dir/dir1 destdir/dir]
+			FileUtils.touch %w[a ab ac dir/b dir/dir1/c destdir/dir/b]
+			File.symlink "a", "symfile"
 			open("dir/b", "w"){|f|f.write "guten"}
 			open("destdir/dir/b", "w"){|f|f.write "tag"}
 		end
@@ -154,8 +399,8 @@ describe Pa do
 
 		context "with :symlink" do
 			it "_copy" do
-				Pa._copy 'symfile', 'symfilea'
-				File.symlink?('symfilea').should be_true
+				Pa._copy 'symfile', 'symfile1'
+				File.symlink?('symfile1').should be_true
 			end
 
 			it "_copy with :folsymlink" do
@@ -167,60 +412,66 @@ describe Pa do
 		end
 
 		context "with :mkdir" do
-			it "_copy" do
+			it "_copy with :mkdir => false" do
 				lambda{Pa.cp "a", "destdir/mkdir/dir"}.should raise_error(Errno::ENOENT)
 			end
 
-			it "_copy with :mkdir" do
+			it "_copy with :mkdir => true" do
 				lambda{Pa.cp "a", "destdir/mkdir/dir", mkdir:true}.should_not raise_error(Errno::ENOENT)
 				File.exists?("destdir/mkdir/dir/a").should be_true
 			end
 
-			it "_copy with :mkdir" do
-				lambda{Pa.cp "a", "destdir/mkdira", mkdir:true}.should_not raise_error(Errno::ENOENT)
-				File.exists?("destdir/mkdira/a").should be_true
+			it "_copy with :mkdir => true" do
+				lambda{Pa.cp "a", "destdir/mkdir1", mkdir:true}.should_not raise_error(Errno::ENOENT)
+				File.exists?("destdir/mkdir1/a").should be_true
 			end
 		end
 
-		context "with :force" do
-			it "_copy" do
-				File.open("destdir/overwrite","w"){|f|f.write("")}
-				lambda{Pa.cp "a", "destdir/overwrite"}.should raise_error(Errno::EEXIST)
-			end
+    it "_copy with :force => false" do
+      File.open("destdir/overwrite","w"){|f|f.write("")}
+      lambda{Pa.cp "a", "destdir/overwrite"}.should raise_error(Errno::EEXIST)
+    end
 
-			it "_copy with :force" do
-				lambda{Pa.cp "a", "destdir/overwrite", force:true}.should_not raise_error(Errno::EEXIST)
-			end
-		end
+    it "_copy with :force => true" do
+      lambda{Pa.cp "a", "destdir/overwrite", force:true}.should_not raise_error(Errno::EEXIST)
+    end
 
-		it "_copy with :normal" do
+		it "_copy with :normal => true" do
 			Pa._copy 'dir', 'dir_normal', special: true
 			dir_empty = (Dir.entries('dir_normal').length==2)
 			dir_empty.should be_true
 		end
-
 	end
 
 	describe "#cp" do
+    # file1 
+    # file2
+    # file3
+    # dir1/
+
+    before :each do
+      FileUtils.mkdir_p %w[dir1]
+      FileUtils.touch %w[file1 file2 file3]
+    end
+
 		it "cp file destdir/file" do
-			Pa.cp "a", "destdir/aa" 
-			File.exists?("destdir/aa").should be_true
+			Pa.cp "file1", "dir1/file2" 
+			File.exists?("dir1/file2").should be_true
 		end
 
 		it "cp file destdir/" do
-			Pa.cp "a", "destdir"
-			File.exists?("destdir/a").should be_true
+			Pa.cp "file1", "dir1"
+			File.exists?("dir1/file1").should be_true
 		end
 
 		it "cp file1 file2 .. dest_file" do
-			lambda{Pa.cp(%w(a ab), "ac")}.should raise_error(Errno::ENOTDIR)
+			lambda{Pa.cp(%w[file1 file2], "file3")}.should raise_error(Errno::ENOTDIR)
 		end
 
-		it "cp file1 file2 .. dird/" do
-			Dir.mkdir 'dird'
-			Pa.cp %w(a ab), "dird"
-			File.exists?("dird/a").should be_true
-			File.exists?("dird/ab").should be_true
+		it "cp file1 file2 .. destdir/" do
+			Pa.cp %w[file1 file2], "dir1"
+			File.exists?("dir1/file1").should be_true
+			File.exists?("dir1/file2").should be_true
 		end
 	end
 	
@@ -228,11 +479,8 @@ describe Pa do
 		# a
 		# dir/ b  
 		before :each do
-			FileUtils.mkdir_p(%w(dir))
-			FileUtils.touch(%w(a dir/b))
-		end
-		after :each do
-			FileUtils.rm_r Dir["*"]-%w(. ..)
+			FileUtils.mkdir_p %w[dir]
+			FileUtils.touch %w[a dir/b]
 		end
 
 		it "mv a dir/a" do
@@ -260,11 +508,8 @@ describe Pa do
 		# a b c
 		# dir/ aa  
 		before :each do
-			FileUtils.mkdir_p(%w(dir))
-			FileUtils.touch(%w(a b c dir/aa))
-		end
-		after :each do
-			FileUtils.rm_r Dir["*"]-%w(. ..)
+			FileUtils.mkdir_p %w[dir]
+			FileUtils.touch %w[a b c dir/aa]
 		end
 
 		it "mv a dir/" do
@@ -283,37 +528,35 @@ describe Pa do
 		end
 	end
 
-  describe "#_mktmpname" do
+	describe "#mv_f" do
+		# file1 with foo
+    # file2
+		# dir1/ 
+    #   filea
+    # dir2/
+    #  dir1/
+		before :each do
+			FileUtils.mkdir_p %w[dir1 dir2/dir1]
+			FileUtils.touch %w[file1 file2 dir1/filea]
+      open("file1", "w") {|f| f.write("foo")}
+		end
+
+		it "works" do
+      Pa.mv_f "file1", "file2"
+      File.read("file2").should == "foo"
+
+      Pa.mv_f "dir1", "dir2"
+      File.exists?("dir2/dir1/filea").should be_true
+		end
+	end
+
+  describe "class DELEGATE_METHODS" do
     it "works" do
-      path = Pa._mktmpname("foo", :tmpdir => "guten")
+      Pa.stub(:home2) { "/home/foo" } 
+      Pa.home.should == Pa("/home/foo")
 
-      path.should =~ %r~guten/foo\..{6}~
-    end
-  end
-
-  describe "#mktmpdir" do
-    it "works" do
-      File.should_receive(:mkdir)
-
-      path = Pa.mktmpdir("foo")
-
-      path.should =~ %r~#{Regexp.escape(ENV["TEMP"])}/foo~
-    end
-  end
-
-  describe "#mktmpfile2" do
-    it "works" do
-      path = Pa.mktmpfile2 :tmpdir => "foo"
-
-      path.should =~ %r~foo/#{$$}~
-    end
-  end
-
-  describe "#mktmpfile" do
-    it "works" do
-      path = Pa.mktmpfile
-
-      path.should be_an_instance_of(Pa)
+      Pa.should_receive(:home2).with(1, 2)
+      Pa.home(1, 2)
     end
   end
 end

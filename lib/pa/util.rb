@@ -27,6 +27,10 @@ class Pa
       def wrap_array(value)
         Array === value ? value : [value]
       end
+
+      def win32? 
+        RUBY_PLATFORM =~ /mingw32|mswin/ 
+      end 
     end
   end
 end

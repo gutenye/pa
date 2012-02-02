@@ -12,13 +12,18 @@ describe Pa do
 	before :all do
 		@curdir = Dir.pwd
 		@tmpdir = Dir.mktmpdir
-		Dir.chdir(@tmpdir)
+		Dir.chdir @tmpdir
 	end
 
 	after :all do
-		Dir.chdir(@curdir)
+		Dir.chdir @curdir
 		FileUtils.rm_r @tmpdir
 	end
+
+  # clean up directory after each run
+  after :each do
+    FileUtils.rm_r Dir.glob("*", File::FNM_DOTMATCH)-%w[. ..]
+  end
 
   describe ".tmpdir2" do
     it "works" do
@@ -33,12 +38,10 @@ describe Pa do
   end
 
 	describe ".glob2" do
-		before(:each) do 
-			@files = %w(fa .fa)
-			FileUtils.touch(@files)
-		end
-		after(:each) do 
-			FileUtils.rm @files
+    # filea
+    # .filea
+		before :each do 
+			FileUtils.touch %w[filea .filea]
 		end
 
     it "returns 1 items" do
@@ -55,25 +58,19 @@ describe Pa do
 	end
 
 	describe ".each2" do
-		# fa .fa fa~ 
+		# filea .filea filea~ 
 		# dira/
 		#   dirb/
 		#     b
-		before(:each) do 
-			@dirs = %w(dira/dirb)
-			@files = %w(fa .fa fa~ dira/dirb/b)
-			FileUtils.mkdir_p(@dirs)
-			FileUtils.touch(@files)
-		end
-		after(:each) do 
-			FileUtils.rm @files
-			FileUtils.rm_r @dirs
+		before :each do 
+			FileUtils.mkdir_p %w[dira/dirb]
+			FileUtils.touch %w[filea .filea filea~ dira/dirb/b]
 		end
 
 		it "works" do
 			ret = []
 			Pa.each2{|pa| ret << pa}
-			ret.sort.should == %w(.fa dira fa fa~)
+			ret.sort.should == %w(.filea dira filea filea~)
 		end
 
 		it "return a Enumerator when call without block" do
@@ -85,23 +82,23 @@ describe Pa do
 		end
 
 		it "raise Errno::ENOTDIDR if path isn't a directory" do
-			lambda { Pa.each2("fa"){} }.should raise_error(Errno::ENOTDIR)
+			lambda { Pa.each2("filea"){} }.should raise_error(Errno::ENOTDIR)
 		end
 
 		it "each2(.) return 'foo' not '.foo'" do 
-			Pa.each2.with_object([]){|(pa),m| m<<pa}.sort.should == %w(.fa dira fa fa~)
+			Pa.each2.with_object([]){|(pa),m| m<<pa}.sort.should == %w(.filea dira filea filea~)
 		end
 
 		it ".each2 with :dot => false -> list all files except dot file" do
-			Pa.each2(:dot => false).with_object([]){|(pa),m|m<<pa}.sort.should == %w[dira fa fa~]
+			Pa.each2(:dot => false).with_object([]){|(pa),m|m<<pa}.sort.should == %w[dira filea filea~]
 		end
 
     it ".each2 with :backup => false" do
-      Pa.each2(:backup => false).with_object([]){|(pa),m|m<<pa}.sort.should == %w[.fa dira fa]
+      Pa.each2(:backup => false).with_object([]){|(pa),m|m<<pa}.sort.should == %w[.filea dira filea]
     end
 
     it ".each2 with :absolute => true" do
-      b = %w[.fa dira fa fa~].map{|v| File.join(Dir.pwd, v)}
+      b = %w[.filea dira filea filea~].map{|v| File.join(Dir.pwd, v)}
       Pa.each2(:absolute => true).with_object([]){|(pa),m|m<<pa}.sort.should == b
     end
 
@@ -114,26 +111,19 @@ describe Pa do
 	end
 
   describe ".each" do
-		# fa .fa fa~ 
+		# filea .filea filea~ 
 		# dira/
 		#   dirb/
 		#     b
-		before(:each) do 
-			@dirs = %w(dira/dirb)
-			@files = %w(fa .fa fa~ dira/dirb/b)
-			FileUtils.mkdir_p(@dirs)
-			FileUtils.touch(@files)
-		end
-
-		after(:each) do 
-			FileUtils.rm @files
-			FileUtils.rm_r @dirs
+		before :each do 
+			FileUtils.mkdir_p %w[dira/dirb]
+			FileUtils.touch %w[filea .filea filea~ dira/dirb/b]
 		end
 
     it "works" do
 			ret = []
 			Pa.each{|pa| ret << pa.p }
-			ret.sort.should == %w(.fa dira fa fa~)
+			ret.sort.should == %w(.filea dira filea filea~)
     end
 
 		it "return a Enumerator when call without block" do
@@ -142,28 +132,22 @@ describe Pa do
   end
 
 	describe ".each2_r" do
-		# fa .fa fa~ 
+		# filea .filea filea~ 
 		# dira/
 		#   dirb/
 		#     b
-		before(:each) do 
-			@dirs = %w(dira/dirb)
-			@files = %w(fa .fa fa~ dira/dirb/b)
-			FileUtils.mkdir_p(@dirs)
-			FileUtils.touch(@files)
-		end
-		after(:each) do 
-			FileUtils.rm @files
-			FileUtils.rm_r @dirs
+		before :each do 
+			FileUtils.mkdir_p %w[dira/dirb]
+			FileUtils.touch %w[filea .filea filea~ dira/dirb/b]
 		end
 
 		it "each2_r -> Enumerator" do
 			Pa.each2_r.should be_an_instance_of Enumerator
-		 	Pa.each2_r.with_object([]){|(pa,r),m|m<<r}.sort.should == %w[.fa dira dira/dirb dira/dirb/b fa fa~]
+		 	Pa.each2_r.with_object([]){|(pa,r),m|m<<r}.sort.should == %w[.filea dira dira/dirb dira/dirb/b filea filea~]
 		end
 
     it "with :absolute => true" do
-      Pa.each2_r(:absolute => true).to_a[0][0].should == File.join(Dir.pwd, "fa~")
+      Pa.each2_r(:absolute => true).to_a[0][0].should == File.join(Dir.pwd, "filea~")
     end
 
 
@@ -179,15 +163,9 @@ describe Pa do
 		# filea 
 		# dira/
 		# 	fileb
-		before(:each) do 
-			@dirs = %w(dira)
-			@files = %w(filea dira/fileb)
-			FileUtils.mkdir_p(@dirs)
-			FileUtils.touch(@files)
-		end
-		after(:each) do 
-			FileUtils.rm @files
-			FileUtils.rm_r @dirs
+		before :each do 
+			FileUtils.mkdir_p %w[dira]
+			FileUtils.touch %w[filea dira/fileb]
 		end
 
 		it "works" do
@@ -208,15 +186,9 @@ describe Pa do
 		# filea 
 		# dira/
 		# 	fileb
-		before(:each) do 
-			@dirs = %w(dira)
-			@files = %w(filea dira/fileb)
-			FileUtils.mkdir_p(@dirs)
-			FileUtils.touch(@files)
-		end
-		after(:each) do 
-			FileUtils.rm @files
-			FileUtils.rm_r @dirs
+		before :each do 
+			FileUtils.mkdir_p %w[dira]
+			FileUtils.touch %w[filea dira/fileb]
 		end
 
 		it "works" do

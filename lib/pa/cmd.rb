@@ -14,6 +14,12 @@ class Pa
   module Cmd
     extend Util::Concern
     module ClassMethods
+      DELEGATE_METHODS = [ :home ]
+
+      def home2
+        Dir.home 
+      end
+
       # link
       #
       # @overload ln(src, dest)
@@ -31,7 +37,7 @@ class Pa
       # @see ln
       # @return [nil]
       def ln_f(src_s, dest, o={})
-        o[:force]=true
+        o[:force] = true
         _ln(:link, src_s, dest, o) 
       end
 
@@ -158,10 +164,6 @@ class Pa
         p
       end # def mktmpdir
 
-      def home
-        Dir.home 
-      end
-
       # make temp file
       # @see mktmpdir
       #
@@ -211,7 +213,7 @@ class Pa
         paths, o = Util.extract_options(paths)
         glob(*paths) { |pa|
           extra_doc = o[:force] ? "-f " : nil
-          puts "rm #{extra_doc}#{pd.p}" if o[:verbose]
+          puts "rm #{extra_doc}#{pa.p}" if o[:verbose]
 
           if File.directory?(pa.p)
             if o[:force]
@@ -417,6 +419,7 @@ class Pa
         end
       end # def _move
 
+      # @param [Array<String,Pa>] paths
       def _touch(paths, o)
         o[:mode] ||= 0644
         paths.map!{|v|get(v)}
@@ -430,7 +433,7 @@ class Pa
 
           mkdir(File.dirname(p)) if o[:mkdir]
 
-          if win32?
+          if Util.win32?
             # win32 BUG. must f.write("") then file can be deleted.
             File.open(p, "w"){|f| f.chmod(o[:mode]); f.write("")} 
           else
@@ -548,6 +551,14 @@ class Pa
         rescue Errno::ENOENT
         end
       end # _copy
+
+      DELEGATE_METHODS.each do |mth|
+        class_eval <<-EOF
+          def #{mth}(*args, &blk)
+            Pa(#{mth}2(*args, &blk))
+          end
+        EOF
+      end
     end
   end
 end
