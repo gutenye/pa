@@ -152,6 +152,27 @@ class Pa
         EOF
       }
     end
+
+    module InstanceMethods
+      DELEGATE_METHODS2 = [ :parent2 ]
+      DELEGATE_METHODS = [ :parent]
+
+      DELEGATE_METHODS2.each do |mth2|
+        class_eval <<-EOF
+          def #{mth2}(*args, &blk)
+            Pa.#{mth2}(path, *args, &blk)
+          end
+        EOF
+      end
+
+      DELEGATE_METHODS.each do |mth|
+        class_eval <<-EOF
+          def #{mth}(*args, &blk)
+            Pa(#{mth}2(*args, &blk))
+          end
+        EOF
+      end
+    end
   end
 end
 

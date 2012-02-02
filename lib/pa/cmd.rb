@@ -147,7 +147,7 @@ class Pa
         p = _mktmpname(name, o)
         puts "mktmpdir #{p}" if o[:verbose]
 
-        File.mkdir(p)
+        Dir.mkdir(p)
 
         begin 
           blk.call(p) 

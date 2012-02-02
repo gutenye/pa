@@ -125,4 +125,22 @@ describe Pa do
       Pa.pwd(1,2)
     end
   end
+
+  describe "instance DELEGATE_METHODS2" do
+    it "works" do
+      Pa.should_receive(:parent2).with("foo", 1, 2)
+
+      Pa.new("foo").parent2(1, 2)
+    end
+  end
+
+  describe "instance DELEGATE_METHODS" do
+    it "works" do
+      p = Pa.new("foo")
+
+      p.should_receive(:parent2).with(1,2)
+      ret = p.parent(1,2)
+      ret.should be_an_instance_of(Pa)
+    end
+  end
 end
