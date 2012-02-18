@@ -68,9 +68,7 @@ describe Pa do
 		end
 
 		it "works" do
-			ret = []
-			Pa.each2{|pa| ret << pa}
-			ret.sort.should == %w(.filea dira filea filea~)
+			Pa.each2.to_a.map{|v| v[0]}.sort.should == %w[.filea dira filea filea~]
 		end
 
 		it "return a Enumerator when call without block" do
@@ -112,6 +110,11 @@ describe Pa do
         pa.should be_an_instance_of Pa
         break
       }
+    end
+
+    it "(:base => x) to build clean path" do
+      Pa.each2("dira").to_a.map{|v|v[0]}.should == %w[dira/dirb]
+      Pa.each2("dirb", :base => "dira").to_a.map{|v|v[0]}.should == %w[dirb/b]
     end
 	end
 
@@ -155,6 +158,21 @@ describe Pa do
       Pa.each2_r(:absolute => true).to_a[0][0].should == File.join(Dir.pwd, "filea~")
     end
 
+    it "(:base => x) to build clean path" do
+      Pa.each2_r("dira").to_a.map{|v|v[0]}.should == %w[dira/dirb dira/dirb/b]
+      Pa.each2_r(".", :base => "dira").to_a.map{|v|v[0]}.should == %w[dirb dirb/b]
+    end
+	end
+
+	describe ".each_r" do
+		# filea .filea filea~ 
+		# dira/
+		#   dirb/
+		#     b
+		before :each do 
+			FileUtils.mkdir_p %w[dira/dirb]
+			FileUtils.touch %w[filea .filea filea~ dira/dirb/b]
+		end
 
     it "#each_r returns Pa" do
       Pa.each_r { |pa|

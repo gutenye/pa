@@ -109,6 +109,7 @@ class Pa
       #   @option o [Boolean] :absolute (false) return absolute path
       #   @option o [Boolean] :error (false) yield(pa, err) instead of raise Errno::EPERM when Dir.open(dir)
       #   @option o [Boolean] :file (false) return path and not raise Errno:ENOTDIR if path is a file.
+      #   @option o [String] :base (nil) base directory.
       #   @return [Enumerator<String>]
       # @overload each(path=".", o={})
       #   @yieldparam [String] path
@@ -117,9 +118,12 @@ class Pa
         return Pa.to_enum(:each2, *args) unless blk
 
         (path,), o = Util.extract_options(args)
+        path ||= "."
         o = {dot: true, backup: true}.merge(o)
 
-        path = path ? get(path) : "."
+        arg_path = path
+        path = o[:base] ? File.join(o[:base], path) : path
+        path = get(path)
         raise Errno::ENOENT, "`#{path}' doesn't exists."  unless File.exists?(path)
 
         if not File.directory?(path) 
@@ -146,12 +150,12 @@ class Pa
             File.absolute_path(File.join(path, entry))
           else
             # => "foo" not "./foo"
-             path=="." ? entry : File.join(path, entry)
+             arg_path == "." ? entry : File.join(arg_path, entry)
           end
 
           blk.call p, err  
-          end
         end
+      end
 
       def each(*args, &blk)
         return Pa.to_enum(:each, *args) unless blk
@@ -276,7 +280,8 @@ class Pa
 
           blk.call path2, relative2, err
 
-          if File.directory?(path2)
+          real_path = o[:base] ? File.join(o[:base], path2) : path2
+          if File.directory?(real_path)
             _each2_r(path2, relative2, o, &blk)
           end
         end
