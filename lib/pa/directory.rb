@@ -106,54 +106,51 @@ class Pa
       #   @prarm [Hash] o
       #   @option o [Boolean] :dot (true) include dot file
       #   @option o [Boolean] :backup (true) include backup file
-      #   @option o [Boolean] :absolute (false) return absolute path
       #   @option o [Boolean] :error (false) yield(pa, err) instead of raise Errno::EPERM when Dir.open(dir)
       #   @option o [Boolean] :file (false) return path and not raise Errno:ENOTDIR if path is a file.
-      #   @option o [String] :base (nil) base directory.
+      #   @option o [String] :base_dir (nil) base directory.
       #   @return [Enumerator<String>]
-      # @overload each(path=".", o={})
+      # @overload each(path=".", o={}){|path, abs, fname, err, [rea]|}
       #   @yieldparam [String] path
+      #   @yieldparam [String] abs absolute path
+      #   @yieldparam [String] fname a basename
+      #   @yieldparam [String] err error
+      #   @yieldparam [String] rea real relative path with o[:base_dir]
       #   @return [nil]
       def each2(*args, &blk) 
         return Pa.to_enum(:each2, *args) unless blk
 
-        (path,), o = Util.extract_options(args)
-        path ||= "."
+        (dir,), o = Util.extract_options(args)
+        dir = dir ? get(dir) : "."
         o = {dot: true, backup: true}.merge(o)
 
-        arg_path = path
-        path = o[:base] ? File.join(o[:base], path) : path
-        path = get(path)
-        raise Errno::ENOENT, "`#{path}' doesn't exists."  unless File.exists?(path)
+        rea_dir = o[:base_dir] ? File.join(o[:base_dir], dir) : dir
+        raise Errno::ENOENT, "`#{rea_dir}' doesn't exists."  unless File.exists?(rea_dir)
 
-        if not File.directory?(path) 
+        if not File.directory?(rea_dir) 
           if o[:file]
-            blk.call(path)
+            rea_path = rea_dir
+            blk.call dir, File.absolute_path(rea_path), File.basename(rea_path), nil, rea_path
             return
           else
-            raise Errno::ENOTDIR, "`#{path}' is not a directoy."
+            raise Errno::ENOTDIR, "`#{rea_dir}' is not a directoy."
           end
         end
 
         begin
-          dir = Dir.open(path)
+          d = Dir.open(rea_dir)
         rescue Errno::EPERM => err
         end
         raise err if err and !o[:error]
 
-        while (entry=dir.read)
+        while (entry=d.read)
           next if %w(. ..).include? entry
           next if not o[:dot] and entry=~/^\./
           next if not o[:backup] and entry=~/~$/
 
-          p = if o[:absolute]
-            File.absolute_path(File.join(path, entry))
-          else
-            # => "foo" not "./foo"
-             arg_path == "." ? entry : File.join(arg_path, entry)
-          end
-
-          blk.call p, err  
+          path = Util.join(dir, entry)
+          rea_path = Util.join(rea_dir, entry)
+          blk.call path, File.absolute_path(rea_path), File.basename(rea_path), err, rea_path
         end
       end
 
@@ -161,8 +158,8 @@ class Pa
         return Pa.to_enum(:each, *args) unless blk
 
         args, o = Util.extract_options(args)
-        each2(*args, o) { |path, err|
-          blk.call Pa(path), err
+        each2(*args, o) { |path, abs, fname, err, rea|
+          blk.call Pa(path), abs, fname, err, rea
         }
       end
 
@@ -173,27 +170,29 @@ class Pa
       # * each2_r(){path, relative, err}
       #
       # @overload each2_r(path=".", o={})
+      #   @option o [String] :base_dir (nil) base directory.
       #   @return [Enumerator<String>]
       # @overload each2_r(path=".", o={})
       #   @yieldparam [String] path
-      #   @yieldparam [String] relative relative path
+      #   @yieldparam [String] abs
+      #   @yieldparam [String] rel/rea relative path
       #   @yieldparam [Errno::ENOENT,Errno::EPERM] err 
       #   @return [nil]
       def each2_r(*args, &blk)
         return Pa.to_enum(:each2_r, *args) if not blk
 
-        (path,), o = Util.extract_options(args)
-        path ||= "."
+        (dir,), o = Util.extract_options(args)
+        dir ||= "."
 
-        _each2_r(path, "", o, &blk)
+        _each2_r(dir, "", o, &blk)
       end
 
       def each_r(*args, &blk)
         return Pa.to_enum(:each_r, *args) if not blk
 
         args, o = Util.extract_options(args)
-        each2_r *args, o do |path, err|
-          blk.call Pa(path), err
+        each2_r *args, o do |path, abs, rel, err, rea|
+          blk.call Pa(path), abs, rel, err, rea
         end
       end
 
@@ -205,23 +204,64 @@ class Pa
       # @Example
       #   Pa.ls2(".") {|path, fname| Pa.directory?(path)} # list only directories
       #
-      # @overload ls2(path=".", o={})
+      # @overload ls2(*dirs, o={})
+      #   @option o [Boolean] :absolute (false) return absolute path instead.
+      #   @option o [Boolean] :include (false) return "<path>/foo"
       # 	@return [Array<String>]
-      # @overload ls2(path=".", o={})
+      # @overload ls2(*dirs, o={}){|path, abs, fname|}
       #   @yieldparam [String] path
+      #   @yieldparam [String] abs
       #   @yieldparam [String] fname
       #   @return [Array<String>]
       def ls2(*args, &blk)
-        paths, o = Util.extract_options(args)
-        paths << "." if paths.empty?
+        dirs, o = Util.extract_options(args)
+        dirs << "." if dirs.empty?
         blk ||= proc { true }
 
-        paths.each.with_object([]) { |path, m|
-          each2(path, o) { |path2|
-            base = File.basename(path2)
-            file = o[:absolute] ? path2 : base
+        dirs.each.with_object([]) { |dir, m|
+          each2(dir, o) { |path, abs, fname, err, rea|
 
-            m << file if blk.call(path2, base)
+            view_path = if o[:absolute]
+                     abs
+                   elsif o[:include]
+                     path
+                   else
+                     fname
+                   end
+
+            m << view_path if blk.call(path, abs, fname, err, rea)
+          }
+        }
+      end
+
+      # ls2 with recursive
+      # @see ls2
+      #
+      # @overload ls2_r(*dirs, o={})
+      # 	@return [Array<String>]
+      # @overload ls2_r(*dirs, o={}){|pa, abs, rel, err, [rea]|
+      #   @yieldparam [String] path
+      #   @yieldparam [String] abs
+      #   @yieldparam [String] rel
+      #   @yieldparam [Exception] err
+      #   @yieldparam [String] rea
+      #   @return [Array<String>]
+      def ls2_r(*args, &blk)
+        dirs, o = Util.extract_options(args)
+        dirs << "." if dirs.empty?
+        blk ||= proc { true }
+
+        dirs.each.with_object([]) { |dir, m|
+          each2_r(dir, o) { |path, abs, rel, err, rea|
+            view_path = if o[:absolute]
+                     abs
+                   elsif o[:include]
+                     path
+                   else
+                     rel
+                   end
+
+            m << view_path if blk.call(path, abs, rel, err, rea)
           }
         }
       end
@@ -229,38 +269,31 @@ class Pa
       # @overload ls(*paths, o={})
       #   @params [Array] paths (["."])
       # 	@return [Array<Pa>]
-      # @overload ls(*paths, o={}){|path, fname|}
-      #   @yieldparam [Pa] path
+      # @overload ls(*paths, o={}){|pa, abs, fname, err, [rea]|}
+      #   @yieldparam [Pa] pa
+      #   @yieldparam [String] abs
       #   @yieldparam [String] fname
+      #   @yieldparam [Exception] err
+      #   @yieldparam [String] rea
       #   @return [Array<String>]
       def ls(*args, &blk)
-        paths, o = Util.extract_options(args)
+        dirs, o = Util.extract_options(args)
         blk ||= proc { true }
         ret = []
 
-        ls2(*paths, o) { |path, fname|
-          file = o[:absolute] ? path : fname
+        ls2(*dirs, o) { |path, abs, fname, err, rea|
+          view_path = if o[:absolute]
+                   abs
+                 elsif o[:include]
+                   path
+                 else
+                   fname
+                 end
 
-          ret << Pa(file) if blk.call(Pa(path), fname)
+          ret << Pa(view_path) if blk.call(Pa(path), abs, fname, err, rea)
         }
 
         ret
-      end
-
-      # ls2 with recursive
-      # @see ls2
-      #
-      # @overload ls2_r(path=".", o={})
-      # 	@return [Array<String>]
-      # @overload ls2_r(path=".", o={})
-      #   @yieldparam [Pa] pa
-      #   @yieldparam [String] rel
-      #   @return [Array<String>]
-      def ls2_r(*args, &blk)
-        blk ||= proc {true}
-        each2_r(*args).with_object([]) { |(path,rel),m| 
-          m << rel if blk.call(path, rel)
-        }
       end
 
       def ls_r(*args, &blk)
@@ -269,20 +302,22 @@ class Pa
       end
 
     private
+
+      # I'm rescurive.
       # @param [String] path
       def _each2_r(path, relative, o, &blk)
+        relative = relative == "" ? nil : relative
         o.merge!(error: true)
 
-        Pa.each2(path, o) do |path2, err|
+        Pa.each2(path, o) do |path2, abs, fname, err, rea|
           # fix for File.join with empty string
-          joins=[ relative=="" ? nil : relative, File.basename(path2)].compact
-          relative2 = File.join(*joins)
+          rel = File.join(*[relative, File.basename(path2)].compact)
+          rea = o[:base_dir] ? File.join(o[:base_dir], rel) : rel
 
-          blk.call path2, relative2, err
+          blk.call path2, abs, rel, err, rea
 
-          real_path = o[:base] ? File.join(o[:base], path2) : path2
-          if File.directory?(real_path)
-            _each2_r(path2, relative2, o, &blk)
+          if File.directory?(abs)
+            _each2_r(path2, rel, o, &blk)
           end
         end
       end

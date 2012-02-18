@@ -265,5 +265,4 @@ describe Pa do
       Pa.new("foo").build.should == Pa("foo")
     end
   end
-
 end

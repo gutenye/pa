@@ -31,6 +31,11 @@ class Pa
       def win32? 
         RUBY_PLATFORM =~ /mingw32|mswin/ 
       end 
+
+      # join(".", "foo") => "foo" not "./foo"
+      def join(dir, *names)
+        dir == "." ? File.join(*names) : File.join(dir, *names)
+      end
     end
   end
 end

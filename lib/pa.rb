@@ -207,13 +207,21 @@ class Pa
   DELEGATE_METHODS = [ :dir, :build, :join ]
 
 	attr_reader :path2
-  attr_reader :absolute2, :dir2, :dir_strict2, :base2, :fname2, :name2, :short2, :ext2, :fext2
+  attr_reader :absolute2, :dir2, :dir_strict2, :base2, :fname2, :name2, :short2, :ext2, :fext2, :rel, :rea
+  attr_reader :options
 
+  # @param [Hash] o option
+  # @option o [String] rel relative path
+  # @option o [String] base_dir
 	# @param [String, #path] path
-	def initialize(path)
-    # convert ~ to ENV["HOME"]
+	def initialize(path, o={})
 		@path2 = Pa.get(path)
+    # convert ~ to ENV["HOME"]
     @path2.sub!(/^~/, ENV["HOME"]) if @path2 # nil
+    @options = o
+
+    @rel = o[:rel] || ""
+    @base_dir = o[:base_dir]
 
 		initialize_variables
   end
@@ -223,8 +231,34 @@ class Pa
 	end
 	include chainable
 
+  def rel
+    raise Error, "don't have a :rel option" unless rel?
+
+    @rel ||= options[:rel]
+  end
+
+  def base_dir
+    raise Error, "don't have a :base_dir option" unless base_dir?
+
+    @base_dir ||= options[:base_dir]
+  end
+
+  def rea
+    raise Error, "don't have a :base_dir option" unless base_dir?
+
+    @rea ||= File.join(options[:base_dir], path)
+  end
+
+  def rel?
+    options.has_key?(:rel)
+  end
+
+  def base_dir?
+    options.has_key?(:base_dir)
+  end
+
   def absolute2
-    @absolute2 ||= File.absolute_path(path)
+    @absolute2 ||= File.absolute_path(options[:base_dir] ? rea : path)
   end
 
   # => ".", "..", "/", "c:"

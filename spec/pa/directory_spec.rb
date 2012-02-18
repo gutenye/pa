@@ -67,8 +67,18 @@ describe Pa do
 			FileUtils.touch %w[filea .filea filea~ dira/dirb/b]
 		end
 
-		it "works" do
-			Pa.each2.to_a.map{|v| v[0]}.sort.should == %w[.filea dira filea filea~]
+    it "(:base_dir => x) to build clean path" do
+      Pa.each2("dira").to_a.map{|v|v[0]}.should == %w[dira/dirb]
+      Pa.each2("dirb", :base_dir => "dira").to_a.map{|v|v[0]}.should == %w[dirb/b]
+    end
+
+    it "yields {|path, abs, fname, err, rea|}" do
+      Pa.each2("dira").to_a.sort[0].should == ["dira/dirb", File.join(Dir.pwd, "dira/dirb"), "dirb", nil, "dira/dirb"]
+      Pa.each2("dirb", :base_dir => "dira").to_a.sort[0].should == ["dirb/b", File.join(Dir.pwd, "dira/dirb/b"), "b", nil, "dira/dirb/b"]
+    end
+
+		it "list a directory" do
+			Pa.each2.to_a.map{|v|v[0]}.sort.should == %w[.filea dira filea filea~]
 		end
 
 		it "return a Enumerator when call without block" do
@@ -84,8 +94,7 @@ describe Pa do
 		end
 
     it "(:file => true) return path if path is a file." do
-      #Pa.each2("filea", :file => true).with_object([]){|(pa),m|m<<pa}.should == %w[filea]
-      Pa.each2("filea", :file => true).to_a.should == %w[filea]
+      Pa.each2("filea", :file => true).to_a[0][0].should == "filea"
     end
 
 		it "(.) return 'foo' not '.foo'" do 
@@ -100,11 +109,6 @@ describe Pa do
       Pa.each2(:backup => false).to_a.map{|v|v[0]}.sort.should == %w[.filea dira filea]
     end
 
-    it "with :absolute => true" do
-      b = %w[.filea dira filea filea~].map{|v| File.join(Dir.pwd, v)}
-      Pa.each2(:absolute => true).to_a.map{|v|v[0]}.sort.should == b
-    end
-
     it "returns Pa" do
       Pa.each { |pa|
         pa.should be_an_instance_of Pa
@@ -112,10 +116,6 @@ describe Pa do
       }
     end
 
-    it "(:base => x) to build clean path" do
-      Pa.each2("dira").to_a.map{|v|v[0]}.should == %w[dira/dirb]
-      Pa.each2("dirb", :base => "dira").to_a.map{|v|v[0]}.should == %w[dirb/b]
-    end
 	end
 
   describe ".each" do
@@ -149,18 +149,17 @@ describe Pa do
 			FileUtils.touch %w[filea .filea filea~ dira/dirb/b]
 		end
 
-		it "each2_r -> Enumerator" do
+    it "=> Enumerator when call without any arguments" do
 			Pa.each2_r.should be_an_instance_of Enumerator
-		 	Pa.each2_r.with_object([]){|(pa,r),m|m<<r}.sort.should == %w[.filea dira dira/dirb dira/dirb/b filea filea~]
 		end
 
-    it "with :absolute => true" do
-      Pa.each2_r(:absolute => true).to_a[0][0].should == File.join(Dir.pwd, "filea~")
+    it "list directory recursive" do
+		 	Pa.each2_r.map{|v,|v}.sort.should == %w[.filea dira dira/dirb dira/dirb/b filea filea~]
     end
 
-    it "(:base => x) to build clean path" do
+    it "(:base_dir => x) to build clean path" do
       Pa.each2_r("dira").to_a.map{|v|v[0]}.should == %w[dira/dirb dira/dirb/b]
-      Pa.each2_r(".", :base => "dira").to_a.map{|v|v[0]}.should == %w[dirb dirb/b]
+      Pa.each2_r(".", :base_dir => "dira").to_a.map{|v|v[0]}.should == %w[dirb dirb/b]
     end
 	end
 
@@ -186,26 +185,77 @@ describe Pa do
 		# filea 
 		# dira/
 		# 	fileb
+    # dirb/
+    #   dirb1/
+    #     fileb1
 		before :each do 
-			FileUtils.mkdir_p %w[dira]
-			FileUtils.touch %w[filea dira/fileb]
+			FileUtils.mkdir_p %w[dira dirb/dirb1]
+			FileUtils.touch %w[filea dira/fileb dirb/dirb1/fileb1]
 		end
 
 		it "works" do
-			Pa.ls2.should == %w[filea dira]
-      Pa.ls2(Dir.pwd).should == %w[filea dira]
+			Pa.ls2.should == %w[filea dira dirb]
+      Pa.ls2("dira").should == %w[fileb]
 		end
 
     it "list multi paths" do
-      Pa.ls2(".", "dira").should == %w[filea dira fileb]
+      Pa.ls2("dira", "dirb").should == %w[fileb dirb1]
     end
 
-    it "with :absolute => true" do
-      Pa.ls2(:absolute => true).should == %w[filea dira].map{|v| File.join(Dir.pwd, v)}
+    it "(:absolute => true) returns absolute path" do
+      Pa.ls2("dira", :absolute => true).should == [File.join(Dir.pwd, "dira/fileb")]
     end
 
-		it "call a block" do
-			Pa.ls2 { |p, fn| File.directory?(p)  }.should == ["dira"]
+    it %~(:include => true) returns "<path>/foo"~ do
+      Pa.ls2("dira", :include => true).should == %w[dira/fileb]
+    end
+
+    it "(:base_dir => x)" do
+      Pa.ls2("dirb1", :base_dir => "dirb").should == %w[fileb1]
+      Pa.ls2("dirb1", :base_dir => "dirb", :include => true).should == %w[dirb1/fileb1]
+    end
+
+		it "call a block returns filtered result" do
+			Pa.ls2 {|p| File.directory?(p)}.should == %w[dira dirb]
+		end
+  end
+
+	describe ".ls2_r" do
+		# filea 
+		# dira/
+		# 	fileb
+    # dirb/
+    #   dirb1/
+    #     fileb1
+		before :each do 
+			FileUtils.mkdir_p %w[dira dirb/dirb1]
+			FileUtils.touch %w[filea dira/fileb dirb/dirb1/fileb1]
+		end
+
+		it "works" do
+			Pa.ls2_r.should == %w[filea dira dira/fileb dirb dirb/dirb1 dirb/dirb1/fileb1]
+      Pa.ls2_r("dirb").should == %w[dirb1 dirb1/fileb1]
+		end
+
+    it "list multi paths" do
+      Pa.ls2_r("dira", "dirb").should == %w[fileb dirb1 dirb1/fileb1]
+    end
+
+    it "(:absolute => true) returns absolute path" do
+      Pa.ls2_r("dirb", :absolute => true).should == %w[dirb/dirb1 dirb/dirb1/fileb1].map{|v|File.join(Dir.pwd, v)}
+    end
+
+    it %~(:include => true) returns "<path>/foo"~ do
+      Pa.ls2_r("dirb", :include => true).should == %w[dirb/dirb1 dirb/dirb1/fileb1]
+    end
+
+    it "(:base_dir => x)" do
+      Pa.ls2_r("dirb1", :base_dir => "dirb").should == %w[fileb1]
+      Pa.ls2_r("dirb1", :base_dir => "dirb", :include => true).should == %w[dirb1/fileb1]
+    end
+
+		it "call a block returns filtered result" do
+			Pa.ls2_r {|p, fn| File.directory?(p)}.should == %w[dira dirb dirb/dirb1]
 		end
   end
 
