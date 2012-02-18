@@ -85,24 +85,29 @@ describe Pa do
 			lambda { Pa.each2("filea"){} }.should raise_error(Errno::ENOTDIR)
 		end
 
-		it "each2(.) return 'foo' not '.foo'" do 
-			Pa.each2.with_object([]){|(pa),m| m<<pa}.sort.should == %w(.filea dira filea filea~)
-		end
-
-		it ".each2 with :dot => false -> list all files except dot file" do
-			Pa.each2(:dot => false).with_object([]){|(pa),m|m<<pa}.sort.should == %w[dira filea filea~]
-		end
-
-    it ".each2 with :backup => false" do
-      Pa.each2(:backup => false).with_object([]){|(pa),m|m<<pa}.sort.should == %w[.filea dira filea]
+    it "(:file => true) return path if path is a file." do
+      #Pa.each2("filea", :file => true).with_object([]){|(pa),m|m<<pa}.should == %w[filea]
+      Pa.each2("filea", :file => true).to_a.should == %w[filea]
     end
 
-    it ".each2 with :absolute => true" do
+		it "(.) return 'foo' not '.foo'" do 
+			Pa.each2.to_a.map{|v|v[0]}.sort.should == %w(.filea dira filea filea~)
+		end
+
+		it "with :dot => false -> list all files except dot file" do
+			Pa.each2(:dot => false).to_a.map{|v|v[0]}.sort.should == %w[dira filea filea~]
+		end
+
+    it "with :backup => false" do
+      Pa.each2(:backup => false).to_a.map{|v|v[0]}.sort.should == %w[.filea dira filea]
+    end
+
+    it "with :absolute => true" do
       b = %w[.filea dira filea filea~].map{|v| File.join(Dir.pwd, v)}
-      Pa.each2(:absolute => true).with_object([]){|(pa),m|m<<pa}.sort.should == b
+      Pa.each2(:absolute => true).to_a.map{|v|v[0]}.sort.should == b
     end
 
-    it "each returns Pa" do
+    it "returns Pa" do
       Pa.each { |pa|
         pa.should be_an_instance_of Pa
         break
@@ -173,6 +178,10 @@ describe Pa do
       Pa.ls2(Dir.pwd).should == %w[filea dira]
 		end
 
+    it "list multi paths" do
+      Pa.ls2(".", "dira").should == %w[filea dira fileb]
+    end
+
     it "with :absolute => true" do
       Pa.ls2(:absolute => true).should == %w[filea dira].map{|v| File.join(Dir.pwd, v)}
     end
@@ -192,16 +201,20 @@ describe Pa do
 		end
 
 		it "works" do
-			Pa.ls.should == %w[filea dira].map{|v| Pa(v)}
-      Pa.ls(Dir.pwd).should == %w[filea dira].map{|v| Pa(v)}
+			Pa.ls.should == %w[filea dira].map{|v|Pa(v)}
+      Pa.ls(Dir.pwd).should == %w[filea dira].map{|v|Pa(v)}
 		end
 
+    it "list multi paths" do
+      Pa.ls(".", "dira").should == %w[filea dira fileb].map{|v|Pa(v)}
+    end
+
     it "with :absolute => true" do
-      Pa.ls(:absolute => true).should == %w[filea dira].map{|v| Pa(File.join(Dir.pwd, v))}
+      Pa.ls(:absolute => true).should == %w[filea dira].map{|v|Pa(File.join(Dir.pwd, v))}
     end
 
 		it "call a block" do
-			Pa.ls{|p, fn| p.directory? }.should == %w[dira].map{|v| Pa(v)}
+			Pa.ls{|p, fn| p.directory? }.should == %w[dira].map{|v|Pa(v)}
 		end
   end
 

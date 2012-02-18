@@ -108,6 +108,7 @@ class Pa
       #   @option o [Boolean] :backup (true) include backup file
       #   @option o [Boolean] :absolute (false) return absolute path
       #   @option o [Boolean] :error (false) yield(pa, err) instead of raise Errno::EPERM when Dir.open(dir)
+      #   @option o [Boolean] :file (false) return path and not raise Errno:ENOTDIR if path is a file.
       #   @return [Enumerator<String>]
       # @overload each(path=".", o={})
       #   @yieldparam [String] path
@@ -120,7 +121,15 @@ class Pa
 
         path = path ? get(path) : "."
         raise Errno::ENOENT, "`#{path}' doesn't exists."  unless File.exists?(path)
-        raise Errno::ENOTDIR, "`#{path}' not a directoy."  unless File.directory?(path)
+
+        if not File.directory?(path) 
+          if o[:file]
+            blk.call(path)
+            return
+          else
+            raise Errno::ENOTDIR, "`#{path}' is not a directoy."
+          end
+        end
 
         begin
           dir = Dir.open(path)
@@ -199,37 +208,39 @@ class Pa
       #   @yieldparam [String] fname
       #   @return [Array<String>]
       def ls2(*args, &blk)
-        (path,), o = Util.extract_options(args)
-        path ||= "."
+        paths, o = Util.extract_options(args)
+        paths << "." if paths.empty?
         blk ||= proc { true }
 
-        each2(path, o).with_object([]) { |(path),m| 
-          base = File.basename(path)
+        paths.each.with_object([]) { |path, m|
+          each2(path, o) { |path2|
+            base = File.basename(path2)
+            file = o[:absolute] ? path2 : base
 
-          blk_ret = blk.call(path, base)
-          file = o[:absolute] ? path : base
-          m << file if blk_ret
+            m << file if blk.call(path2, base)
+          }
         }
       end
 
-      # @overload ls(path=".", o={})
+      # @overload ls(*paths, o={})
+      #   @params [Array] paths (["."])
       # 	@return [Array<Pa>]
-      # @overload ls(path=".", o={})
+      # @overload ls(*paths, o={}){|path, fname|}
       #   @yieldparam [Pa] path
       #   @yieldparam [String] fname
       #   @return [Array<String>]
       def ls(*args, &blk)
-        (path,), o = Util.extract_options(args)
-        path ||= "."
+        paths, o = Util.extract_options(args)
         blk ||= proc { true }
+        ret = []
 
-        each2(path, o).with_object([]) { |(path), m|
-          base = File.basename(path)
+        ls2(*paths, o) { |path, fname|
+          file = o[:absolute] ? path : fname
 
-          blk_ret = blk.call(Pa(path), base)
-          file = o[:absolute] ? path : base
-          m << Pa(file) if blk_ret
+          ret << Pa(file) if blk.call(Pa(path), fname)
         }
+
+        ret
       end
 
       # ls2 with recursive
@@ -244,7 +255,7 @@ class Pa
       def ls2_r(*args, &blk)
         blk ||= proc {true}
         each2_r(*args).with_object([]) { |(path,rel),m| 
-          m<<rel if blk.call(path, rel)
+          m << rel if blk.call(path, rel)
         }
       end
 
