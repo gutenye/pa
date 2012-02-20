@@ -93,7 +93,7 @@ class Pa
       # @overload touch(*paths, o={})
       #   @param [String] *paths
       #   @param [Hash] o option
-      #   @option o [Fixnum,String] :mode
+      #   @option o [Fixnum,String] :mode (0664)
       #   @option o [Boolean] :mkdir auto mkdir if path contained directory not exists.
       #   @option o [Boolean] :force 
       #   @option o [Boolean] :verbose 
@@ -119,7 +119,7 @@ class Pa
       # @overload mkdir(*paths, o={})
       #   @param [String, Pa] *paths
       #   @param [Hash] o option
-      #   @option o [Fixnum] :mode
+      #   @option o [Fixnum] :mode (0775)
       #   @option o [Boolean] :force
       #   @option o [Boolean] :verbose
       #   @return [nil]
@@ -308,6 +308,8 @@ class Pa
       #    yield  # use yield to do the actuactal cp work
       #  end
       #
+      # default: preverse mode, not owner.
+      #
       # @overload cp(src_s, dest, o)
       #   @param [Array<String>, String] src_s support globbing
       #   @param [String,Pa] dest
@@ -460,7 +462,7 @@ class Pa
       end
 
       def _mkdir(paths, o)
-        o[:mode] ||= 0744
+        o[:mode] ||= 0775
         paths.map!{|v|get(v)}
         paths.each {|p|
           puts "mkdir #{p}" if o[:verbose]
