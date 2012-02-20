@@ -108,7 +108,7 @@ class Pa
       #   @option o [Boolean] :backup (true) include backup file
       #   @option o [Boolean] :error (false) yield(pa, err) instead of raise Errno::EPERM when Dir.open(dir)
       #   @option o [Boolean] :file (false) return path and not raise Errno:ENOTDIR if path is a file.
-      #   @option o [String] :base_dir (nil) base directory.
+      #   @option o [String,Pa] :base_dir (nil) base directory.
       #   @return [Enumerator<String>]
       # @overload each(path=".", o={}){|path, abs, fname, err, [rea]|}
       #   @yieldparam [String] path
@@ -124,7 +124,7 @@ class Pa
         dir = dir ? get(dir) : "."
         o = {dot: true, backup: true}.merge(o)
 
-        rea_dir = o[:base_dir] ? File.join(o[:base_dir], dir) : dir
+        rea_dir = o[:base_dir] ? File.join(get(o[:base_dir]), dir) : dir
         raise Errno::ENOENT, "`#{rea_dir}' doesn't exists."  unless File.exists?(rea_dir)
 
         if not File.directory?(rea_dir) 
@@ -170,7 +170,7 @@ class Pa
       # * each2_r(){path, relative, err}
       #
       # @overload each2_r(path=".", o={})
-      #   @option o [String] :base_dir (nil) base directory.
+      #   @option o [String, Pa] :base_dir (nil) base directory.
       #   @return [Enumerator<String>]
       # @overload each2_r(path=".", o={})
       #   @yieldparam [String] path
@@ -312,7 +312,7 @@ class Pa
         Pa.each2(path, o) do |path2, abs, fname, err, rea|
           # fix for File.join with empty string
           rel = File.join(*[relative, File.basename(path2)].compact)
-          rea = o[:base_dir] ? File.join(o[:base_dir], rel) : rel
+          rea = o[:base_dir] ? File.join(get(o[:base_dir]), rel) : rel
 
           blk.call path2, abs, rel, err, rea
 

@@ -70,6 +70,7 @@ describe Pa do
     it "(:base_dir => x) to build clean path" do
       Pa.each2("dira").to_a.map{|v|v[0]}.should == %w[dira/dirb]
       Pa.each2("dirb", :base_dir => "dira").to_a.map{|v|v[0]}.should == %w[dirb/b]
+      Pa.each2("dirb", :base_dir => Pa("dira")).to_a.map{|v|v[0]}.should == %w[dirb/b]
     end
 
     it "yields {|path, abs, fname, err, rea|}" do
@@ -160,6 +161,7 @@ describe Pa do
     it "(:base_dir => x) to build clean path" do
       Pa.each2_r("dira").to_a.map{|v|v[0]}.should == %w[dira/dirb dira/dirb/b]
       Pa.each2_r(".", :base_dir => "dira").to_a.map{|v|v[0]}.should == %w[dirb dirb/b]
+      Pa.each2_r(".", :base_dir => Pa("dira")).to_a.map{|v|v[0]}.should == %w[dirb dirb/b]
     end
 	end
 
