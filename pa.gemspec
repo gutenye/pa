@@ -1,5 +1,4 @@
-$: << File.expand_path("../lib", __FILE__)
-require "pa/version"
+Kernel.load File.expand_path("../lib/pa/version.rb", __FILE__)
 
 Gem::Specification.new do |s|
 	s.name = "pa"
