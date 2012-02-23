@@ -217,7 +217,7 @@ class Pa
 	def initialize(path, o={})
 		@path2 = Pa.get(path)
     # convert ~ to ENV["HOME"]
-    @path2.sub!(/^~/, ENV["HOME"]) if @path2 # nil
+    @path2.sub!(/^~/, ENV["HOME"].to_s) if @path2 # nil
     @options = o
 
     @rel = o[:rel] || ""
