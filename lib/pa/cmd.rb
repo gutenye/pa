@@ -9,6 +9,23 @@ rm family
 === Example 
   rm path # it's clear: remove a file
   rmdir path #  it's clear: remove a directory
+
+:verbose and :show_cmd options, almost every cmd has these two options.
+
+Pa.mv "dira", "dirb", :show_cmd => true
+  > mv dira dirb
+
+Pa.mv "dira", "dirb", :verbose => true
+  > rename dira/filea dirb/filea
+  > rename dira/fileb dirb/fileb
+
+Pa.touch "a b c", :show_cmd => true
+ > touch a b c
+
+Pa.touch "a b c", :verbose => true
+ > touch a
+ > touch b
+ > touch c
 =end
 class Pa
   module Cmd
@@ -27,6 +44,9 @@ class Pa
       #
       # @param [Array<String>, String] src_s support globbing
       # @param [String,Pa] dest
+      # @param [Hash] o
+      # @option o [Boolean] :show_cmd puts cmd
+      # @option o [Boolean] :verbose verbose mode
       # @return [nil]
       def ln(src_s, dest, o={})
         _ln(:link, src_s, dest, o) 
@@ -69,9 +89,10 @@ class Pa
       # @param [String,Pa] path
       # @param [Hash] o
       # @option o [Boolean] :verbose verbose mode
+      # @option o [Boolean] :show_cmd puts cmd
       def cd(path=ENV["HOME"], o={}, &blk)
         p = get(path)
-        puts "cd #{p}" if o[:verbose]
+        puts "cd #{p}" if (o[:verbose] or o[:show_cmd])
         Dir.chdir(p, &blk) 
       end
 
@@ -81,10 +102,11 @@ class Pa
       # @param [String] path
       # @param [Hash] o
       # @option o [Boolean] :verbose verbose mode
+      # @option o [Boolean] :show_cmd puts cmd
       # @return [nil]
       def chroot(path, o={})
         p = get(path)
-        puts "chdroot #{p}" if o[:verbose]
+        puts "chdroot #{p}" if (o[:verbose] or o[:show_cmd])
         Dir.chroot(p)
       end
 
@@ -96,7 +118,8 @@ class Pa
       #   @option o [Fixnum,String] :mode (0664)
       #   @option o [Boolean] :mkdir auto mkdir if path contained directory not exists.
       #   @option o [Boolean] :force 
-      #   @option o [Boolean] :verbose 
+      #   @option o [Boolean] :verbose verbose mode
+      #   @option o [Boolean] :show_cmd puts cmd
       #   @return [nil]
       def touch(*args)
         paths, o = Util.extract_options(args)
@@ -121,7 +144,8 @@ class Pa
       #   @param [Hash] o option
       #   @option o [Fixnum] :mode (0775)
       #   @option o [Boolean] :force
-      #   @option o [Boolean] :verbose
+      #   @option o [Boolean] :verbose verbose mode
+      #   @option o [Boolean] :show_cmd puts cmd
       #   @return [nil]
       def mkdir(*args)
         paths, o = Util.extract_options(args)
@@ -144,14 +168,15 @@ class Pa
       # @overload mktmpdir(name, o={}, &blk)
       #   @param [Hash] o options
       #   @option o [String] :tmpdir (ENV["TEMP"])
-      #   @option o [Symbol] :verbose
+      #   @option o [Symbol] :verbose verbose mode
+      #   @option o [Symbol] :show_cmd puts cmd
       #   @return [String] path
       # @overload mktmpdir(o={}, &blk) # name=$$
       def mktmpdir(*args, &blk)
         (name,), o = Util.extract_options(args)
 
         p = _mktmpname(name, o)
-        puts "mktmpdir #{p}" if o[:verbose]
+        puts "mktmpdir #{p}" if (o[:verbose] or o[:show_cmd])
 
         Dir.mkdir(p)
 
@@ -169,14 +194,15 @@ class Pa
       #
       # @overload mktmpfile2(name=$$, o={}, &blk)
       #   @param [Hash] o options
-      #   @option o [Boolean] :verbose
+      #   @option o [Boolean] :verbose verbose mode
+      #   @option o [Boolean] :show_cmd puts cmd
       #   @option o [String] :tmpdir
       #   @return [String] path
       def mktmpfile2(*args, &blk) 
         (name,), o = Util.extract_options(args)
 
         p = _mktmpname(name, o) 
-        puts "mktmpfile #{p}" if o[:verbose]
+        puts "mktmpfile #{p}" if (o[:verbose] or o[:show_cmd])
 
         begin 
           blk.call(p) 
@@ -192,7 +218,7 @@ class Pa
         (name,), o = Util.extract_options(args)
 
         p = _mktmpname(name, o) 
-        puts "mktmpfile #{p}" if o[:verbose]
+        puts "mktmpfile #{p}" if (o[:verbose] or o[:show_cmd])
 
         begin 
           blk.call(Pa(p)) 
@@ -207,12 +233,15 @@ class Pa
       #
       # @overload rm(*paths, o={})
       #   @param [String] *paths support globbing
-      #   @param o [Boolean] :verbose
+      #   @param o [Boolean] :verbose verbose mode
+      #   @param o [Boolean] :show_cmd puts cmd
       # @return [nil]
       def rm(*paths)
         paths, o = Util.extract_options(paths)
+        extra_doc = o[:force] ? "-f " : nil
+        puts "rm #{extra_doc}#{paths.join(" ")}" if o[:show_cmd]
+
         glob(*paths) { |pa|
-          extra_doc = o[:force] ? "-f " : nil
           puts "rm #{extra_doc}#{pa.p}" if o[:verbose]
 
           if File.directory?(pa.p)
@@ -236,11 +265,15 @@ class Pa
       # rm directory only. still remove if directory is not empty.
       #
       # @param [String] *paths support globbing
+      # @param [Hash] o options
+      # @option o [Boolean] :verbose verbose mode
+      # @option o [Boolean] :show_cmd puts cmd
       # @return [nil]
       def rmdir(*paths)
         paths, o = Util.extract_options(paths)
+        extra_doc = o[:force] ? "-f " : nil
+        puts "rmdir #{extra_doc}#{paths.join(" ")}" if o[:verbose]
         glob(*paths) { |pa|
-          extra_doc = o[:force] ? "-f " : nil
           puts "rmdir #{extra_doc}#{pa.p}" if o[:verbose]
 
           if not File.directory?(pa.p)
@@ -266,6 +299,7 @@ class Pa
       # @return [nil]
       def rm_r(*paths)
         paths, o = Util.extract_options(paths)
+        puts "rm -r #{path.join(" ")}" if o[:show_cmd]
         glob(*paths){ |pa|
           puts "rm -r #{pa.p}" if o[:verbose]
           File.directory?(pa.p)  ? _rmdir(pa) : File.delete(pa.p)
@@ -316,6 +350,7 @@ class Pa
       #   @param [Hash] o option
       #   @option o [Boolean] :mkdir mkdir(dest) if dest not exists.
       #   @option o [Boolean] :verbose puts cmd when execute
+      #   @option o [Boolean] :show_cmd puts cmd
       #   @option o [Boolean] :folsymlink follow symlink
       #   @option o [Boolean] :force force dest file if dest is a file
       #   @option o [Boolean] :special special copy, when cp a directory, only mkdir, not cp the directory's content, usefull in Pa.each_r
@@ -326,6 +361,7 @@ class Pa
       def cp(src_s, dest, o={}, &blk)
         srcs = glob(*Util.wrap_array(src_s)).map{|v| v.path}
         dest = Pa.get(dest)
+        puts "cp #{srcs.join(" ")} #{dest}" if o[:show_cmd]
 
         if o[:mkdir] and (not File.exists?(dest))
           Pa.mkdir dest
@@ -357,13 +393,17 @@ class Pa
       # @see cp
       #
       # @param [Hash] o option
-      # @option o [Boolean] :verbose
+      # @option o [Boolean] :verbose verbose mode
+      # @option o [Boolean] :show_cmd puts cmd
       # @option o [Boolean] :mkdir
       # @option o [Boolean] :fore
       # @return [nil]
       def mv(src_s, dest, o={}, &blk)
         srcs = glob(*Util.wrap_array(src_s)).map{|v| get(v)}
         dest = get(dest)
+
+        extra_doc = o[:force] ? "-f " : nil
+        puts "mv #{extra_doc}#{srcs.join(" ")} #{dest}" if o[:show_cmd]
 
         if o[:mkdir] and (not File.exists?(dest))
           mkdir dest
@@ -425,8 +465,9 @@ class Pa
       def _touch(paths, o)
         o[:mode] ||= 0644
         paths.map!{|v|get(v)}
+        extra_doc = o[:force] ? "-f " : nil
+        puts "touch #{extra_doc}#{paths.join(" ")}" if o[:show_cmd]
         paths.each {|p|
-          extra_doc = o[:force] ? "-f " : nil
           puts "touch #{extra_doc}#{p}" if o[:verbose]
 
           if File.exists?(p) 
@@ -446,22 +487,28 @@ class Pa
 
       # @param [Array,String,#path] src_s
       # @param [String,#path] dest
+      #
       def _ln(method, src_s, dest, o={})
+        srcs = Util.wrap_array(src_s)
         dest = get(dest)
-        glob(*Util.wrap_array(src_s)) {|src|
+        extra_doc = "" 
+        extra_doc << (method==:symlink ? "-s " : "")
+        extra_doc << (o[:force] ? "-f " : "")
+        puts "ln #{extra_doc}#{srcs.join(" ")} #{dest}" if o[:show_cmd]
+
+        glob(*srcs) {|src|
           src = get(src)
           dest = File.join(dest, File.basename(src)) if File.directory?(dest)
           Pa.rm_r(dest) if o[:force] and File.exists?(dest)
-          extra_doc = "" 
-          extra_doc << (method==:symlink ? "-s " : "")
-          extra_doc << (o[:force] ? "-f " : "")
-          puts "ln #{extra_doc}#{src} #{dest}" if o[:verbose]
+          puts "ln #{extra_doc}#{src} #{dest}" if o[:verbose] 
 
           File.send(method, src, dest)
         }	
       end
 
       def _mkdir(paths, o)
+        puts "mkdir #{paths.join(" ")}" if o[:show_cmd]
+
         o[:mode] ||= 0775
         paths.map!{|v|get(v)}
         paths.each {|p|

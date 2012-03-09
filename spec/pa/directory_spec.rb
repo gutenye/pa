@@ -196,8 +196,8 @@ describe Pa do
 		end
 
 		it "works" do
-			Pa.ls2.should == %w[filea dira dirb]
-      Pa.ls2("dira").should == %w[fileb]
+			Pa.ls2.sort.should == %w[dira dirb filea]
+      Pa.ls2("dira").sort.should == %w[fileb]
 		end
 
     it "list multi paths" do
@@ -218,7 +218,7 @@ describe Pa do
     end
 
 		it "call a block returns filtered result" do
-			Pa.ls2 {|p| File.directory?(p)}.should == %w[dira dirb]
+			Pa.ls2 {|p| File.directory?(p)}.sort.should == %w[dira dirb]
 		end
   end
 
@@ -235,8 +235,8 @@ describe Pa do
 		end
 
 		it "works" do
-			Pa.ls2_r.should == %w[filea dira dira/fileb dirb dirb/dirb1 dirb/dirb1/fileb1]
-      Pa.ls2_r("dirb").should == %w[dirb1 dirb1/fileb1]
+			Pa.ls2_r.sort.should == %w[dira dira/fileb dirb dirb/dirb1 dirb/dirb1/fileb1 filea]
+      Pa.ls2_r("dirb").sort.should == %w[dirb1 dirb1/fileb1]
 		end
 
     it "list multi paths" do
@@ -257,7 +257,7 @@ describe Pa do
     end
 
 		it "call a block returns filtered result" do
-			Pa.ls2_r {|p, fn| File.directory?(p)}.should == %w[dira dirb dirb/dirb1]
+			Pa.ls2_r {|p, fn| File.directory?(p)}.sort.should == %w[dira dirb dirb/dirb1]
 		end
   end
 
