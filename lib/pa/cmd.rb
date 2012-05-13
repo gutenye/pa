@@ -241,7 +241,7 @@ class Pa
         extra_doc = o[:force] ? "-f " : nil
         puts "rm #{extra_doc}#{paths.join(" ")}" if o[:show_cmd]
 
-        glob(*paths) { |pa|
+        Pa.glob(*paths) { |pa|
           puts "rm #{extra_doc}#{pa.p}" if o[:verbose]
 
           if File.directory?(pa.p)
@@ -272,9 +272,9 @@ class Pa
       def rmdir(*paths)
         paths, o = Util.extract_options(paths)
         extra_doc = o[:force] ? "-f " : nil
-        puts "rmdir #{extra_doc}#{paths.join(" ")}" if o[:verbose]
-        glob(*paths) { |pa|
-          puts "rmdir #{extra_doc}#{pa.p}" if o[:verbose]
+        puts "rmdir #{extra_doc}#{paths.join(" ")}" if o[:show_cmd]
+        Pa.glob(*paths) { |pa|
+          puts "  rmdir #{extra_doc}#{pa.p}" if o[:verbose]
 
           if not File.directory?(pa.p)
             if o[:force]
@@ -292,7 +292,40 @@ class Pa
         o[:force] = true
         rmdir *paths, o
       end
+      
+      # empty a directory.
+      #
+      # @example
+      #
+      #  empty_dir("foo")
+      #
+      # @param [String] *dirs
+      # @param [Hash] o options
+      # @option o [Boolean] :verbose verbose mode
+      # @option o [Boolean] :show_cmd puts cmd
+      # @return [nil]
+      def empty_dir(*dirs)
+        dirs, o = Util.extract_options(dirs)
+        extra_doc = o[:force] ? "-f " : nil
+        puts "empty_dir #{extra_doc}#{dirs.join(" ")}" if o[:show_cmd]
 
+        dirs.each {|dir|
+          if not File.exists?(pa.p)
+            raise Errno::ENOENT, "not exists -- #{dir}" unless o[:force]
+          elsif not File.directory?(pa.p)
+            raise Errno::ENOTDIR, "not a directory -- #{dir}"  unless o[:force]
+          else
+            rm_r *Pa.glob2("#{dir}/*", :dotmatch => true)
+          end
+        }
+      end
+
+      def empty_dir_f(*dirs)
+        dirs, o = Util.extract_options(dirs)
+        o[:force] = true
+        empty_dir *dirs, o
+      end
+      
       # rm recusive, rm both file and directory
       #
       # @see rm
@@ -300,7 +333,7 @@ class Pa
       def rm_r(*paths)
         paths, o = Util.extract_options(paths)
         puts "rm -r #{path.join(" ")}" if o[:show_cmd]
-        glob(*paths){ |pa|
+        Pa.glob(*paths){ |pa|
           puts "rm -r #{pa.p}" if o[:verbose]
           File.directory?(pa.p)  ? _rmdir(pa) : File.delete(pa.p)
         }
@@ -321,7 +354,7 @@ class Pa
       # @return [nil]
       def rm_if(*paths, &blk)
         paths, o = Util.extract_options(paths)
-        glob(*paths) do |pa|
+        Pa.glob(*paths) do |pa|
           rm_r pa, o if blk.call(pa)
         end
       end
@@ -359,7 +392,7 @@ class Pa
       #   @yield [src,dest,o]
       #   @return [nil]
       def cp(src_s, dest, o={}, &blk)
-        srcs = glob(*Util.wrap_array(src_s)).map{|v| v.path}
+        srcs = Pa.glob(*Util.wrap_array(src_s)).map{|v| v.path}
         dest = Pa.get(dest)
         puts "cp #{srcs.join(" ")} #{dest}" if o[:show_cmd]
 
@@ -399,7 +432,7 @@ class Pa
       # @option o [Boolean] :fore
       # @return [nil]
       def mv(src_s, dest, o={}, &blk)
-        srcs = glob(*Util.wrap_array(src_s)).map{|v| get(v)}
+        srcs = Pa.glob(*Util.wrap_array(src_s)).map{|v| get(v)}
         dest = get(dest)
 
         extra_doc = o[:force] ? "-f " : nil
@@ -496,10 +529,18 @@ class Pa
         extra_doc << (o[:force] ? "-f " : "")
         puts "ln #{extra_doc}#{srcs.join(" ")} #{dest}" if o[:show_cmd]
 
-        glob(*srcs) {|src|
+        Pa.glob(*srcs) {|src|
           src = get(src)
           dest = File.join(dest, File.basename(src)) if File.directory?(dest)
-          Pa.rm_r(dest) if o[:force] and File.exists?(dest)
+
+          if File.exists?(dest) 
+            if o[:force]
+              Pa.rm_r(dest)
+            else
+              raise Errno::EEXIST, "dest exists -- #{dest}"
+            end
+          end
+
           puts "ln #{extra_doc}#{src} #{dest}" if o[:verbose] 
 
           File.send(method, src, dest)
@@ -515,7 +556,11 @@ class Pa
           puts "mkdir #{p}" if o[:verbose]
 
           if File.exists?(p)
-            o[:force] ? next : raise(Errno::EEXIST, "File exist -- #{p}")
+            if o[:force] 
+              next 
+            else 
+              raise Errno::EEXIST, "File exist -- #{p}"
+            end
           end
 
           stack = []

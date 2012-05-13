@@ -47,65 +47,46 @@ describe Pa do
 
   describe "#ln" do
     # file1
+    # file2
     before :each do
-      FileUtils.touch %w[file1]
+      FileUtils.touch %w[file1 file2]
     end
 
     it "works" do
       Pa.ln("file1", "lna")
       File.identical?("file1", "lna").should be_true
-
-      Pa.ln(Pa("file1"), Pa("lnb"))
-      File.identical?("file1", "lnb").should be_true
-    end
-  end
-
-  describe "#ln_f" do
-    # file1
-    # file2
-    # file3
-    before :each do
-      FileUtils.touch %w[file1 file2 file3]
     end
 
-    it "works" do
-      Pa.ln_f("file1", "file2")
+    it "raises Errno::EEXIST" do
+      lambda{ Pa.ln("file1", "file2") }.should raise_error(Errno::EEXIST)
+    end
+
+    it "doesn't raise Errno::EEXIST with :force" do
+      lambda{ Pa.ln("file1", "file2", :force) }.should_not raise_error(Errno::EEXIST) 
       File.identical?("file1", "file2").should be_true
-
-      Pa.ln_f(Pa("file1"), Pa("file3"))
-      File.identical?("file1", "file3").should be_true
     end
   end
 
   describe "#symln" do
     # file1
+    # file2
     before :each do
-      FileUtils.touch %w[file1]
+      FileUtils.touch %w[file1 file2]
     end
 
     it "works" do
       Pa.symln("file1", "syma")
       File.symlink?("syma").should be_true
-
-      Pa.symln(Pa("file1"), Pa("symb"))
-      File.symlink?("symb").should be_true
-    end
-  end
-
-  describe "#symln_f" do
-    # file1 
-    # file2
-    # file3
-    before :each do
-      FileUtils.touch %w[file1 file2 file3]
     end
 
-    it "works" do
-      Pa.symln_f("file1", "file2")
+    it "raises Errno::EEXIST" do
+      lambda{ Pa.symln("file1", "file2") }.should raise_error(Errno::EEXIST)
+    end
+
+    it "doesn't raise Errno::EEXIST with :force" do
+      lambda{ Pa.symln("file1", "file2", :force) }.should_not raise_error(Errno::EEXIST) 
       File.symlink?("file2").should be_true
-
-      Pa.symln_f(Pa("file1"), Pa("file3"))
-      File.symlink?("file3").should be_true
+      File.readlink("file2").should == "file1"
     end
   end
 
@@ -182,21 +163,23 @@ describe Pa do
   end
 
 	describe "#mkdir" do
-		it "mkdir" do
-			Pa.mkdir("guten/tag")
-			File.exists?("guten/tag").should be_true
-		end
-	end
-
-	describe "#mkdir_f" do
     # dir1/dira
     before :each do
       FileUtils.mkdir_p %w[dir1/dira]
     end
 
-		it "mkdir" do
-			Pa.mkdir_f "dir1/dira"
+		it "works" do
+			Pa.mkdir("dir2/dirb")
+			File.exists?("guten/tag").should be_true
 		end
+
+    it "raise Errno::EEXIST" do
+      lambda{ Pa.mkdir("dir1/dira") }.should raise_error(Errno::EEXIST)
+    end
+
+    it "doesn't raise Errno::EEXIST with :force" do
+      lambda{ Pa.mkdir("dir1/dira", :force) }.should_not raise_error(Errno::EEXIST)
+    end
 	end
 
   describe "#_mktmpname" do
@@ -263,23 +246,14 @@ describe Pa do
     it "remove file" do
       Pa.rm "a"
       File.exists?("a").should be_false
-      lambda{Pa.rm("dir")}.should raise_error(Errno::EISDIR)
-    end
-  end
-
-  describe "#rm_f" do
-    # rm family
-    # a
-    # dir/ 
-    #   dir1/
-    #   a 
-    before :each do
-      FileUtils.mkdir_p %w[dir/dir1]
-      FileUtils.touch %w[a dir/a]
     end
 
-    it "remove file force" do
-      lambda{Pa.rm_f("dir")}.should_not raise_error(Errno::EISDIR)
+    it "raises Errno::EISDIR" do
+      lambda{ Pa.rm("dir") }.should raise_error(Errno::EISDIR)
+    end
+
+    it "doens't raises Errno::EISDIR with :force" do
+      lambda{ Pa.rm("dir", :force => true) }.should_not raise_error(Errno::EISDIR)
     end
   end
 
@@ -297,12 +271,18 @@ describe Pa do
     it "remove directory" do
       Pa.rmdir "dir"
       File.exists?("dir").should be_false
-      lambda{Pa.rmdir("a")}.should raise_error(Errno::ENOTDIR)
+    end
+
+    it "raises Errno::ENOTDIR" do
+      lambda{ Pa.rmdir("a") }.should raise_error(Errno::ENOTDIR)
+    end
+
+    it "doesn't raise Errno::ENOTDIR with :force" do
+      lambda{ Pa.rmdir_r("a", :force => true) }.should_not raise_error(Errno::ENOTDIR) 
     end
   end
 
-  describe "#rmdir_f" do
-    # rm family
+  describe "#empty_dir" do
     # a
     # dir/ 
     #   dir1/
@@ -312,8 +292,25 @@ describe Pa do
       FileUtils.touch %w[a dir/a]
     end
 
-    it "remove directory force" do
-      lambda{Pa.rmdir_r("a")}.should_not raise_error(Errno::ENOTDIR) 
+    it "empty a directory" do
+      Pa.empty_dir "dir"
+      Dir.entries("dir").should == %w[. ..]
+    end
+
+    it "raises Errno::ENOTDIR" do
+      lambda{ Pa.empty_dir("a") }.should raise_error(Errno::ENOTDIR)
+    end
+
+    it "doesn't raise Errno::ENOTDIR with :force" do
+      lambda{ Pa.empty_dir("a", :force => true) }.should raise_error(Errno::ENOTDIR)
+    end
+
+    it "raises Errno::ENOENT" do
+      lambda{ Pa.empty_dir "ENOENT" }.should raise_error(Errno::ENOENT)
+    end
+
+    it "doesn't raise Errno::ENOENT with :force" do
+      lambda{ Pa.empty_dir("ENOENT", :force => true) }.should raise_error(Errno::ENOENT)
     end
   end
 
@@ -505,20 +502,25 @@ describe Pa do
 	end
 
 	describe "#mv" do
-		# a b c
-		# dir/ aa  
+		# file1 with foo
+    # file2
+    # file3
+		# dir1/ 
+    #   filea
+    # dir2/
+    #  dir1/
 		before :each do
 			FileUtils.mkdir_p %w[dir]
 			FileUtils.touch %w[a b c dir/aa]
+
+			FileUtils.mkdir_p %w[dir1 dir2/dir1]
+			FileUtils.touch %w[file1 file2 file3 dir1/filea]
+      open("file1", "w") {|f| f.write("foo")}
 		end
 
-		it "mv a dir/" do
-			Pa.mv "a", "dir"
-			File.exists?("dir/a").should be_true
-		end
-
-		it "mv a b .. file" do
-			lambda{Pa.mv(%w(a b), "c")}.should raise_error(Errno::ENOTDIR)
+		it "mv file1 dir1" do
+			Pa.mv "file1", "dir1"
+			File.exists?("dir1/file1").should be_true
 		end
 
 		it "mv file1 file2 .. dir/" do
@@ -526,26 +528,21 @@ describe Pa do
 			File.exists?("dir/a").should be_true
 			File.exists?("dir/b").should be_true
 		end
-	end
 
-	describe "#mv_f" do
-		# file1 with foo
-    # file2
-		# dir1/ 
-    #   filea
-    # dir2/
-    #  dir1/
-		before :each do
-			FileUtils.mkdir_p %w[dir1 dir2/dir1]
-			FileUtils.touch %w[file1 file2 dir1/filea]
-      open("file1", "w") {|f| f.write("foo")}
+    it "raises dest Errno::ENOTDIR" do
+      lambda{ Pa.mv(%w[file1 file2], "file3") }.should raise_error(Errno::ENOTDIR)
+    end
+
+		it "raises Errno::EEXIST" do 
+			lambda{ Pa.mv("file1", "file2") }.should raise_error(Errno::EEXIST)
+      lambda{ Pa.mv("dir1", "dir2")  }.should raise_error(Errno::EEXIST)
 		end
 
-		it "works" do
-      Pa.mv_f "file1", "file2"
+    it "doesn't raise Errno::ENOTDIR with :force" do
+      lambda{ Pa.mv("file1", "file2", :force => true) }.should_not raise_error(Errno::EEXIST)
       File.read("file2").should == "foo"
 
-      Pa.mv_f "dir1", "dir2"
+      lambda{ Pa.mv("dir1", "dir2", :force => true) }.should_not raise_error(Errno::EEXIST)
       File.exists?("dir2/dir1/filea").should be_true
 		end
 	end

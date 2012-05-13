@@ -24,15 +24,15 @@ class Pa
     extend Util::Concern
 
     module ClassMethods
-      # path globbing, exclude '.' '..' for :dotmatch
+      # path globbing, exclude '.' '..' for :dot
       # @note glob is * ** ? [set] {a,b}
       #
       # @overload glob2(*paths, o={})
       # 	@param [String] path
       # 	@param [Hash] o option
-      # 	@option o [Boolean] :dotmatch glob not match dot file by default.
-      # 	@option o [Boolean] :pathname wildcard doesn't match /
-      # 	@option o [Boolean] :noescape makes '\\' ordinary
+      # 	@option o [Boolean] :dotmatch (false) match dot file.   FNM_DOTMATCH
+      # 	@option o [Boolean] :pathname (false) wildcard doesn't match /. FNM_PATHNAME
+      # 	@option o [Boolean] :noescape (false) makes '\\' ordinary. FNM_NOESCAPE
       # 	@return [Array<String>] 
       # @overload glob2(*paths, o={})
       #   @yieldparam [String] path
@@ -192,7 +192,7 @@ class Pa
 
         args, o = Util.extract_options(args)
         each2_r *args, o do |path, abs, rel, err, rea|
-          blk.call Pa(path), abs, rel, err, rea
+          blk.call Pa(path, :rel => rel), abs, rel, err, rea
         end
       end
 

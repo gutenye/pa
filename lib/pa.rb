@@ -204,10 +204,11 @@ class Pa
   end
 
   DELEGATE_METHODS2 = [ :join2 ]
-  DELEGATE_METHODS = [ :dir, :build, :join ]
+  DELEGATE_METHODS = [ :build, :join ]
+  DELEGATE_ATTR_METHODS = [ :dir, :rel, :rea ]
 
 	attr_reader :path2
-  attr_reader :absolute2, :dir2, :dir_strict2, :base2, :fname2, :name2, :short2, :ext2, :fext2, :rel, :rea
+  attr_reader :absolute2, :dir2, :dir_strict2, :base2, :fname2, :name2, :short2, :ext2, :fext2, :rel2, :rea2
   attr_reader :options
 
   # @param [Hash] o option
@@ -220,8 +221,7 @@ class Pa
     @path2.sub!(/^~/, ENV["HOME"].to_s) if @path2 # nil
     @options = o
 
-    @rel = o[:rel] || ""
-    @base_dir = o[:base_dir]
+    @base_dir = o[:base_dir] || "."
 
 		initialize_variables
   end
@@ -231,37 +231,28 @@ class Pa
 	end
 	include chainable
 
-  def rel
-    raise Error, "don't have a :rel option" unless rel?
-
-    @rel ||= options[:rel]
-  end
-
   def base_dir
-    raise Error, "don't have a :base_dir option" unless base_dir?
-
-    @base_dir ||= options[:base_dir]
+    @base_dir ||= (options[:base_dir] || ".")
   end
 
-  def rea
-    raise Error, "don't have a :base_dir option" unless base_dir?
-
-    @rea ||= File.join(options[:base_dir], path)
+  def rel2
+    @rel2 ||= (options[:rel] || "" )
   end
 
-  def rel?
-    options.has_key?(:rel)
-  end
-
-  def base_dir?
-    options.has_key?(:base_dir)
+  def rea2
+    @rea2 ||= options[:base_dir] ? File.join(base_dir, path) : path
   end
 
   def absolute2
-    @absolute2 ||= File.absolute_path(options[:base_dir] ? rea : path)
+    @absolute2 ||= File.absolute_path(rea2)
   end
 
   # => ".", "..", "/", "c:"
+  #
+  # "foo" => "."
+  # "./foo" => "."
+  # "../../foo" => "../.."
+  #
   def dir2
     @dir2 ||= File.dirname(path)
   end
@@ -273,7 +264,7 @@ class Pa
 
     dir = File.dirname(path)
 
-    @dir_strict2 = if %w[. ..].include?(dir) && path !~ %r!^\.\.?/!
+    @dir_strict2 = if %w[.].include?(dir) && path !~ %r~^\./~
       ""
     else
       dir
@@ -458,6 +449,14 @@ class Pa
       end
     EOF
   }
+
+  DELEGATE_ATTR_METHODS.each {|mth|
+    class_eval <<-EOF
+      def #{mth}(*args, &blk)
+        @#{mth} ||= Pa(#{mth}2(*args, &blk))
+      end
+    EOF
+  }
 end
 
 require "pa/path"
@@ -476,9 +475,10 @@ private
 	# a very convient function.
 	# 
 	# @example
+  #
 	#   Pa('/home').exists? 
-	def Pa(path)
+	def Pa(path, o={})
 		return path if Pa===path
-		Pa.new path
+		Pa.new path, o
 	end
 end
