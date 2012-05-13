@@ -55,6 +55,11 @@ describe Pa do
     it "#glob returns Pa instead" do
       Pa.glob("*")[0].should be_an_instance_of Pa
     end
+
+    it "remove . .." do
+      Pa.glob2(".*").should have(1).items
+      Pa.glob2("#{@tmpdir}/.*").should have(1).items
+    end
 	end
 
 	describe ".each2" do

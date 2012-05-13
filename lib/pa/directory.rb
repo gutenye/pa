@@ -24,7 +24,7 @@ class Pa
     extend Util::Concern
 
     module ClassMethods
-      # path globbing, exclude '.' '..' for :dot
+      # path globbing, exclude '.' '..'
       # @note glob is * ** ? [set] {a,b}
       #
       # @overload glob2(*paths, o={})
@@ -47,10 +47,8 @@ class Pa
           flag |= File.const_get("FNM_#{option.upcase}") if value
         end
 
-        files = Dir.glob(paths, flag)
-
-        # delete . .. for '.*'
-        %w(. ..).each {|v| files.delete(v)}
+        # delete . .. 
+        files = Dir.glob(paths, flag).delete_if{|v| v =~ %r~(^|/)\.\.?$~}
 
         ret = []
         files.each { |path|

@@ -310,9 +310,10 @@ class Pa
         puts "empty_dir #{extra_doc}#{dirs.join(" ")}" if o[:show_cmd]
 
         dirs.each {|dir|
-          if not File.exists?(pa.p)
+          dir = Pa(dir)
+          if not File.exists?(dir.p)
             raise Errno::ENOENT, "not exists -- #{dir}" unless o[:force]
-          elsif not File.directory?(pa.p)
+          elsif not File.directory?(dir.p)
             raise Errno::ENOTDIR, "not a directory -- #{dir}"  unless o[:force]
           else
             rm_r *Pa.glob2("#{dir}/*", :dotmatch => true)

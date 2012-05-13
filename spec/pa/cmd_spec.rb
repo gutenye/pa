@@ -62,7 +62,7 @@ describe Pa do
     end
 
     it "doesn't raise Errno::EEXIST with :force" do
-      lambda{ Pa.ln("file1", "file2", :force) }.should_not raise_error(Errno::EEXIST) 
+      lambda{ Pa.ln("file1", "file2", :force => true)  }.should_not raise_error(Errno::EEXIST) 
       File.identical?("file1", "file2").should be_true
     end
   end
@@ -84,7 +84,7 @@ describe Pa do
     end
 
     it "doesn't raise Errno::EEXIST with :force" do
-      lambda{ Pa.symln("file1", "file2", :force) }.should_not raise_error(Errno::EEXIST) 
+      lambda{ Pa.symln("file1", "file2", :force => true) }.should_not raise_error(Errno::EEXIST) 
       File.symlink?("file2").should be_true
       File.readlink("file2").should == "file1"
     end
@@ -170,7 +170,7 @@ describe Pa do
 
 		it "works" do
 			Pa.mkdir("dir2/dirb")
-			File.exists?("guten/tag").should be_true
+			File.exists?("dir2/dirb").should be_true
 		end
 
     it "raise Errno::EEXIST" do
@@ -302,7 +302,7 @@ describe Pa do
     end
 
     it "doesn't raise Errno::ENOTDIR with :force" do
-      lambda{ Pa.empty_dir("a", :force => true) }.should raise_error(Errno::ENOTDIR)
+      lambda{ Pa.empty_dir("a", :force => true) }.should_not raise_error(Errno::ENOTDIR)
     end
 
     it "raises Errno::ENOENT" do
@@ -310,7 +310,7 @@ describe Pa do
     end
 
     it "doesn't raise Errno::ENOENT with :force" do
-      lambda{ Pa.empty_dir("ENOENT", :force => true) }.should raise_error(Errno::ENOENT)
+      lambda{ Pa.empty_dir("ENOENT", :force => true) }.should_not raise_error(Errno::ENOENT)
     end
   end
 

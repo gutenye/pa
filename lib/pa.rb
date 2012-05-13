@@ -1,4 +1,5 @@
 require "tmpdir"
+require "pd"
 
 =begin rdoc
 Pa(Path) is similary to Pathname, but more powerful.

@@ -1,3 +1,5 @@
+require "bundler/setup"
+require "stringio"
 require "pa"
 
 $specdir = Pa.dir(__FILE__)

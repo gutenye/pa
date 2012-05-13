@@ -1,5 +1,7 @@
 source :rubygems
 
+gem "pd"
+
 group :development do
   gem "thor"
   gem "rspec"
