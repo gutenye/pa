@@ -1,5 +1,4 @@
-Pa, a path libraray for Ruby
-========================
+# Pa, a path libraray for Ruby [![Build Status](https://secure.travis-ci.org/GutenYe/pa.png)](http://travis-ci.org/GutenYe/pa)
 
 | Homepage:      |  https://github.com/GutenYe/pa       |
 |----------------|--------------------------------------|

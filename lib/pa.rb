@@ -248,6 +248,10 @@ class Pa
     @absolute2 ||= File.absolute_path(rea2)
   end
 
+  def absolute
+    @absolute ||= Pa(absolute2)
+  end
+
   # => ".", "..", "/", "c:"
   #
   # "foo" => "."
@@ -256,6 +260,10 @@ class Pa
   #
   def dir2
     @dir2 ||= File.dirname(path)
+  end
+
+  def dir
+    @dir ||= Pa(dir2)
   end
 
   # Pa("foo") => ""
@@ -270,6 +278,10 @@ class Pa
     else
       dir
     end
+  end
+
+  def dir_strict
+    @dir_strict ||= Pa(dir_strict2)
   end
 
   def base2
@@ -300,7 +312,7 @@ class Pa
   alias ext ext2
   alias fext fext2
 
-  # abbretive
+  # abbreviate
   alias p2 path2 
   alias p2 path
   alias a2 absolute2
@@ -317,6 +329,10 @@ class Pa
   alias n name
   alias e ext
   alias fe fext
+
+  alias a absolute
+  alias d dir
+  alias d_s dir_strict
 
 	# return '#<Pa @path="foo", @absolute="/home/foo">'
 	#
@@ -373,6 +389,10 @@ class Pa
 
   def short2
     @short2 ||= Pa.shorten2(@path) 
+  end
+
+  def short
+    @short ||= Pa(short2)
   end
 
   # @return [String]
