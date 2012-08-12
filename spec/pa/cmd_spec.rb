@@ -196,7 +196,7 @@ describe Pa do
 
       path = Pa.mktmpdir("foo")
 
-      path.should =~ %r~#{Regexp.escape(ENV["TEMP"])}/foo~
+      path.should =~ %r~#{Regexp.escape(Dir.tmpdir)}/foo~
     end
   end
 
