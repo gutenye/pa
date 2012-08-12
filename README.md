@@ -7,7 +7,7 @@
 | Documentation: | http://rubydoc.info/gems/pa/frames   |
 | Issue Tracker: | https://github.com/GutenYe/pa/issues |
 
-Note: not support ruby 1.8
+Note: not support ruby 1.8, jruby, rubinius
 
 Usage
 -----
