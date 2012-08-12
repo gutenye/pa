@@ -580,7 +580,7 @@ class Pa
 
       # <name>.JNBNZG
       def _mktmpname(name=nil, o={})
-        o[:tmpdir] ||= ENV["TEMP"]
+        o[:tmpdir] ||= Dir.tmpdir
         name ||= $$
 
         begin

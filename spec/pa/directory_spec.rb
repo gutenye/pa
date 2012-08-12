@@ -276,20 +276,20 @@ describe Pa do
 		end
 
 		it "works" do
-			Pa.ls.should == %w[filea dira].map{|v|Pa(v)}
-      Pa.ls(Dir.pwd).should == %w[filea dira].map{|v|Pa(v)}
+			Pa.ls.sort.should == %w[filea dira].map{|v|Pa(v)}.sort
+      Pa.ls(Dir.pwd).sort.should == %w[filea dira].map{|v|Pa(v)}.sort
 		end
 
     it "list multi paths" do
-      Pa.ls(".", "dira").should == %w[filea dira fileb].map{|v|Pa(v)}
+      Pa.ls(".", "dira").sort.should == %w[filea dira fileb].map{|v|Pa(v)}.sort
     end
 
     it "with :absolute => true" do
-      Pa.ls(:absolute => true).should == %w[filea dira].map{|v|Pa(File.join(Dir.pwd, v))}
+      Pa.ls(:absolute => true).sort.should == %w[filea dira].map{|v|Pa(File.join(Dir.pwd, v))}.sort
     end
 
 		it "call a block" do
-			Pa.ls{|p, fn| p.directory? }.should == %w[dira].map{|v|Pa(v)}
+			Pa.ls{|p, fn| p.directory? }.sort.should == %w[dira].map{|v|Pa(v)}.sort
 		end
   end
 
