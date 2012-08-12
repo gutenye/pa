@@ -7,11 +7,7 @@
 | Documentation: | http://rubydoc.info/gems/pa/frames   |
 | Issue Tracker: | https://github.com/GutenYe/pa/issues |
 
-
-Overview
---------
-
-	a path library for Ruby
+Note: not support ruby 1.8
 
 Usage
 -----
