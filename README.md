@@ -7,8 +7,6 @@
 | Documentation: | http://rubydoc.info/gems/pa/frames   |
 | Issue Tracker: | https://github.com/GutenYe/pa/issues |
 
-Note: not support ruby 1.8, jruby, rubinius
-
 Usage
 -----
 
@@ -45,6 +43,10 @@ Contributors
 
 * [contributors](https://github.com/GutenYe/pa/contributors)
 
+Requirements
+------------
+
+* ruby 1.9.3
 
 Copyright
 ---------
