@@ -146,8 +146,8 @@ class Pa
           next if not o[:dot] and entry=~/^\./
           next if not o[:backup] and entry=~/~$/
 
-          path = Util.join(dir, entry)
-          rea_path = Util.join(rea_dir, entry)
+          path = Util.join_path(dir, entry)
+          rea_path = Util.join_path(rea_dir, entry)
           blk.call path, File.absolute_path(rea_path), File.basename(rea_path), err, rea_path
         end
       end
@@ -321,16 +321,14 @@ class Pa
       end
     end
 
-    module InstanceMethods
-      DELEGATE_METHODS = [:each2, :each, :each2_r, :each_r, :ls2, :ls]
+    DELEGATE_METHODS = [:each2, :each, :each2_r, :each_r, :ls2, :ls]
 
-      DELEGATE_METHODS.each { |mth|
-        class_eval <<-EOF
-          def #{mth}(*args, &blk)
-            Pa.#{mth}(path, *args, &blk)
-          end
-        EOF
-      }
-    end
+    DELEGATE_METHODS.each { |mth|
+      class_eval <<-EOF
+        def #{mth}(*args, &blk)
+          Pa.#{mth}(path, *args, &blk)
+        end
+      EOF
+    }
   end
 end

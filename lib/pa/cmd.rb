@@ -510,8 +510,8 @@ class Pa
 
           mkdir(File.dirname(p)) if o[:mkdir]
 
-          if Util.win32?
-            # win32 BUG. must f.write("") then file can be deleted.
+          if Util.windows?
+            # windows BUG. must f.write("") then file can be deleted.
             File.open(p, "w"){|f| f.chmod(o[:mode]); f.write("")} 
           else
             File.open(p, "w"){|f| f.chmod(o[:mode])}

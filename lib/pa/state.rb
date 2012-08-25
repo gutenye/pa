@@ -80,35 +80,33 @@ class Pa
       end
     end
 
-    module InstanceMethods
-      # delegated from File
-      FILE_DELEGATED_METHODS.each { |name|
-        module_eval <<-METHOD, __FILE__, __LINE__
-          def #{name}(*args)
-            File.#{name}(*args, path)
-          end
-        METHOD
-      }
+    # delegated from File
+    FILE_DELEGATED_METHODS.each { |name|
+      module_eval <<-METHOD, __FILE__, __LINE__
+        def #{name}(*args)
+          File.#{name}(*args, path)
+        end
+      METHOD
+    }
 
-      def chmod(mode)
-        File.chmod(mode, path) 
-      end
+    def chmod(mode)
+      File.chmod(mode, path) 
+    end
 
-      def lchmod(mode)
-        File.lchmod(mode, path) 
-      end
+    def lchmod(mode)
+      File.lchmod(mode, path) 
+    end
 
-      def chown(uid, gid=nil)
-        File.chown(uid, gid, path) 
-      end
+    def chown(uid, gid=nil)
+      File.chown(uid, gid, path) 
+    end
 
-      def lchown(uid, gid=nil)
-        File.lchown(uid, gid, path) 
-      end
+    def lchown(uid, gid=nil)
+      File.lchown(uid, gid, path) 
+    end
 
-      def utime(atime, mtime)
-        File.utime(atime, mtime, path) 
-      end
+    def utime(atime, mtime)
+      File.utime(atime, mtime, path) 
     end
   end
 end

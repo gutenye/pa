@@ -14,8 +14,9 @@ Signal.trap('QUIT') do
 	test "spec"
 end
 
-def test path
-	cmd = "rspec #{path}"
+def test(path)
+  system "clear"
+	cmd = "bundle exec rspec #{path}"
 	puts cmd
 	system cmd
 end

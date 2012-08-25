@@ -1,11 +1,13 @@
 # Pa, a path libraray for Ruby [![Build Status](https://secure.travis-ci.org/GutenYe/pa.png)](http://travis-ci.org/GutenYe/pa)
 
-| Homepage:      |  https://github.com/GutenYe/pa       |
+|                |                                      |
 |----------------|--------------------------------------|
+| Homepage:      |  https://github.com/GutenYe/pa       |
 | Author:	       | Guten                                |
 | License:       | MIT-LICENSE                          |
 | Documentation: | http://rubydoc.info/gems/pa/frames   |
 | Issue Tracker: | https://github.com/GutenYe/pa/issues |
+| Platforms:     | Ruby 1.9.3, JRuby, Rubinius          |
 
 Usage
 -----
@@ -43,17 +45,12 @@ Contributors
 
 * [contributors](https://github.com/GutenYe/pa/contributors)
 
-Requirements
-------------
-
-* ruby 1.9.3
-
 Copyright
 ---------
 
 (the MIT License)
 
-Copyright (c) 2011 Guten
+Copyright (c) 2011-2012 Guten
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
