@@ -2,9 +2,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-module Pa::Cmd::ClassMethods
-	public :_copy, :_touch, :_mkdir, :_mktmpname, :_rmdir, :_copy, :_move, :_ln
-end
+public_all_methods Pa::Cmd::ClassMethods
 
 describe Pa do
 	before :all do

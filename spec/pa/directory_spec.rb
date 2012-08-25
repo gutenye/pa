@@ -2,11 +2,7 @@ require "spec_helper"
 require "fileutils"
 require "tmpdir"
 
-class Pa
-	class << self
-		public :_copy, :_move, :_rmdir, :_mktmpname, :_mkdir, :_touch
-	end
-end
+public_all_methods Pa
 
 describe Pa do
 	before :all do

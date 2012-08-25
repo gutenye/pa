@@ -1,10 +1,6 @@
 require "spec_helper"
 
-class Pa
-  class <<self
-    public :_wrap, :build_path2
-  end
-end
+public_all_methods Pa
 
 describe Pa do
   it "._wrap" do

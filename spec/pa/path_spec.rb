@@ -18,7 +18,7 @@ describe Pa do
   describe ".dangling?" do 
     it "works" do
       olddir=Dir.pwd
-      Dir.chdir("#{$specdir}/data/tmp")
+      Dir.chdir("#{$spec_dir}/data/tmp")
 
       begin
         File.open("fa", "w"){|f| f.puts "guten" }
