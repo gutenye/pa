@@ -20,4 +20,3 @@ def test(path)
 	puts cmd
 	system cmd
 end
-

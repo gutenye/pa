@@ -76,7 +76,7 @@ class Pa
 	EUnkonwType = Class.new Error
 
   class << self
-    DELEGATE_METHODS = [:join, :build]
+    DELEGATE_METHODS = [:join, :build, :relative_to]
 
     # get path of an object. 
     #
@@ -166,6 +166,11 @@ class Pa
       blk.call(Pa(path))
     end
 
+    # @return [String,nil]
+    def relative_to2(path, dir)
+      path.start_with?(dir) ? path[dir.length()..-1] : nil
+    end
+
     DELEGATE_METHODS.each { |mth| 
       class_eval <<-EOF
         def #{mth}(*args, &blk)
@@ -245,7 +250,7 @@ class Pa
   end
 
   def absolute2
-    @absolute2 ||= File.absolute_path(rea2)
+    @absolute2 ||= File.absolute_path(rea2, ".") # rbx
   end
 
   def absolute

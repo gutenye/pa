@@ -93,6 +93,13 @@ describe Pa do
     end
   end
 
+  describe ".relative_to2" do
+    it do
+      expect(Pa.relative_to2("/home/a/b.txt", "/home/")).to eq("a/b.txt")
+      expect(Pa.relative_to2("/home/a/b.txt", "/home1/")).to be_nil
+    end
+  end
+
   describe "class DELEGATE_METHODS" do
     it "works" do
       Pa.stub(:build2){|arg| arg }
@@ -108,7 +115,7 @@ describe Pa do
   end
 
   it "#absolute2" do
-    Pa.new("foo.avi").absolute2.should == File.join(File.absolute_path("."), "foo.avi")
+    Pa.new("a.txt").absolute2.should == File.join(File.absolute_path(".", "."), "a.txt") # rbx
   end
 
   it "#dir2" do

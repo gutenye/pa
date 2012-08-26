@@ -78,7 +78,7 @@ describe Pa do
 
   describe ".absolute2" do
     it "returns absolute_path" do
-      Pa.absolute2(".").should == File.absolute_path(".")
+      Pa.absolute2(".").should == File.absolute_path(".", ".") # rbx
     end
   end
 

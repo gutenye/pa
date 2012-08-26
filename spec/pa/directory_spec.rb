@@ -117,7 +117,6 @@ describe Pa do
         break
       }
     end
-
 	end
 
   describe ".each" do

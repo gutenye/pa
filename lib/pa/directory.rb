@@ -128,7 +128,7 @@ class Pa
         if not File.directory?(rea_dir) 
           if o[:file]
             rea_path = rea_dir
-            blk.call dir, File.absolute_path(rea_path), File.basename(rea_path), nil, rea_path
+            blk.call dir, File.absolute_path(rea_path, "."), File.basename(rea_path), nil, rea_path # jruby rbx
             return
           else
             raise Errno::ENOTDIR, "`#{rea_dir}' is not a directoy."
@@ -148,7 +148,7 @@ class Pa
 
           path = Util.join_path(dir, entry)
           rea_path = Util.join_path(rea_dir, entry)
-          blk.call path, File.absolute_path(rea_path), File.basename(rea_path), err, rea_path
+          blk.call path, File.absolute_path(rea_path, "."), File.basename(rea_path), err, rea_path # jruby rbx
         end
       end
 
@@ -157,7 +157,7 @@ class Pa
 
         args, o = Util.extract_options(args)
         each2(*args, o) { |path, abs, fname, err, rea|
-          blk.call Pa(path), abs, fname, err, rea
+          blk.call Pa(path), abs, fname, err, rea # jruby need []
         }
       end
 
@@ -190,7 +190,7 @@ class Pa
 
         args, o = Util.extract_options(args)
         each2_r *args, o do |path, abs, rel, err, rea|
-          blk.call Pa(path, :rel => rel), abs, rel, err, rea
+          blk.call Pa(path, :rel => rel), abs, rel, err, rea # jruby need []
         end
       end
 
@@ -312,7 +312,7 @@ class Pa
           rel = File.join(*[relative, File.basename(path2)].compact)
           rea = o[:base_dir] ? File.join(get(o[:base_dir]), rel) : rel
 
-          blk.call path2, abs, rel, err, rea
+          blk.call path2, abs, rel, err, rea # jruby need []
 
           if File.directory?(abs)
             _each2_r(path2, rel, o, &blk)

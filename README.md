@@ -7,7 +7,7 @@
 | License:       | MIT-LICENSE                          |
 | Documentation: | http://rubydoc.info/gems/pa/frames   |
 | Issue Tracker: | https://github.com/GutenYe/pa/issues |
-| Platforms:     | Ruby 1.9.3, JRuby, Rubinius          |
+| Platforms:     | Ruby 1.9.3, Rubinius                 |
 
 Usage
 -----

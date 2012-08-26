@@ -81,7 +81,7 @@ class Pa
 
       # @see File.readlink
       def readlink(path)
-        File.readlink(get(path)) 
+        File.readlink(File.absolute_path(get(path), ".")) # jruby rbx
       end
 
       # change directory
@@ -512,9 +512,11 @@ class Pa
 
           if Util.windows?
             # windows BUG. must f.write("") then file can be deleted.
-            File.open(p, "w"){|f| f.chmod(o[:mode]); f.write("")} 
+            File.open(p, "w"){|f| f.write("")}  # windows need f.write so that it can be delete.
+            File.chmod(o[:mode], p) # jruby can't use File#chmod
           else
-            File.open(p, "w"){|f| f.chmod(o[:mode])}
+            File.open(p, "w"){}
+            File.chmod(o[:mode], p) 
           end
         }
       end
@@ -543,6 +545,11 @@ class Pa
           end
 
           puts "ln #{extra_doc}#{src} #{dest}" if o[:verbose] 
+
+          # jruby need absolute_path
+          if method == :link then
+            src, dest = File.absolute_path(src, "."), File.absolute_path(dest, ".") # rbx
+          end
 
           File.send(method, src, dest)
         }	

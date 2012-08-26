@@ -30,7 +30,7 @@ class Pa
       # @return [Boolean]
       def absolute?(path) 
         path=get(path) 
-        File.absolute_path(path) == path 
+        File.absolute_path(path, ".") == path  # rbx
       end
 
       # is path a dangling symlink?
@@ -103,7 +103,7 @@ class Pa
       # @param [String,Pa] path
       # @return [String]
       def absolute2(path) 
-        File.absolute_path get(path)
+        File.absolute_path(get(path), ".") # rbx
       end
 
       # alias from File.expand_path

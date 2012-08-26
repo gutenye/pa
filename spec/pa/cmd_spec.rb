@@ -11,15 +11,15 @@ describe Pa do
 		Dir.chdir @tmpdir
 	end
 
-	after :all do
-		Dir.chdir @curdir
-		FileUtils.rm_r @tmpdir
-	end
-
   # clean up directory after each run
   after :each do
     FileUtils.rm_r Dir.glob("*", File::FNM_DOTMATCH)-%w[. ..]
   end
+
+	after :all do
+		Dir.chdir @curdir
+		FileUtils.rm_r @tmpdir
+	end
 
   describe "#home2" do
     it "works" do
@@ -34,7 +34,7 @@ describe Pa do
     end
 
     it "works" do
-      output = capture :stdout do
+      output = capture do
         Pa._ln(:link, "_lna", "_lnb", :verbose => true) 
       end
 
@@ -84,7 +84,7 @@ describe Pa do
     it "doesn't raise Errno::EEXIST with :force" do
       lambda{ Pa.symln("file1", "file2", :force => true) }.should_not raise_error(Errno::EEXIST) 
       File.symlink?("file2").should be_true
-      File.readlink("file2").should == "file1"
+      File.readlink(File.absolute_path("file2")).should == "file1"
     end
   end
 
@@ -135,6 +135,7 @@ describe Pa do
       File.exists?("file2").should be_true
     end
   end
+
 
   describe "#touch" do
     it "works" do
