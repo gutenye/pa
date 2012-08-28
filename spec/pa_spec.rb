@@ -4,33 +4,8 @@ public_all_methods Pa
 
 describe Pa do
   it "._wrap" do
-    Pa._wrap("foo").should == Pa("foo")
-    Pa._wrap(["guten", "tag"]).should == [Pa("guten"), Pa("tag")]
-  end
-
-  describe ".build_path2" do
-    it "works" do
-      Pa.build_path2(path: "foo/bar.avi").should == "foo/bar.avi"
-      Pa.build_path2(dir: "foo", name: "bar", ext: "avi").should == "foo/bar.avi"
-    end
-
-    it "complex examples" do
-      Pa.build_path2(dir: "foo").should == "foo"
-      Pa.build_path2(fname: "bar.avi").should == "bar.avi"
-      Pa.build_path2(base: "bar.avi").should == "bar.avi"
-      Pa.build_path2(name: "bar").should == "bar"
-      Pa.build_path2(fext: ".avi").should == ".avi"
-      Pa.build_path2(ext: "avi").should == ".avi"
-      Pa.build_path2(dir: "", fname: "bar.avi").should == "bar.avi"
-    end
-
-    it "percedure" do
-      Pa.build_path2(path: "foo", fname: "bar").should == "foo"
-      Pa.build_path2(fname: "foo", name: "bar").should == "foo"
-      Pa.build_path2(fname: "foo", ext: "bar").should == "foo" 
-      Pa.build_path2(fname: "foo", fext: ".bar").should == "foo" 
-      Pa.build_path2(fext: "foo", ext: "bar").should == "foo" 
-    end
+    expect(Pa._wrap("foo")).to eq(Pa("foo"))
+    expect(Pa._wrap(["guten", "tag"])).to eq([Pa("guten"), Pa("tag")])
   end
 
   describe ".get" do
@@ -39,151 +14,219 @@ describe Pa do
       def path.path
         "hello"
       end
-      Pa.get(path).should == "hello"
+      expect(Pa.get(path)).to eq("hello")
     end
 
     it "get path from a string" do
-      Pa.get("foo").should == "foo"
+      expect(Pa.get("foo")).to eq("foo")
     end
 
     it "get nil from nil" do
-      Pa.get(nil).should == nil
+      expect(Pa.get(nil)).to eq(nil)
     end
 
     it "otherwise raise ArgumentError" do
-      lambda { Pa.get([]) }.should raise_error(ArgumentError)
+      expect{ Pa.get([]) }.to raise_error(ArgumentError)
+    end
+  end
+
+  describe ".absolute2" do
+    it do
+      expect(Pa.absolute2("a.txt")).to eq(File.join(File.absolute_path(".", "."), "a.txt")) # rbx
+    end
+  end
+
+  describe ".dir2" do
+    it do
+      expect(Pa.dir2("/home/foo.txt")).to eq("/home")
+      expect(Pa.dir2("foo.txt")).to eq(".")
+    end
+  end
+
+  describe ".dir_strict2" do
+    it do
+      expect(Pa.dir_strict2("foo.txt")).to eq("")
+      expect(Pa.dir_strict2("./foo.txt")).to eq(".")
+      expect(Pa.dir_strict2("../foo.txt")).to eq("..")
+      expect(Pa.dir_strict2("/foo.txt")).to eq("/")
+    end
+  end
+
+  describe ".base2" do
+    it do
+      expect(Pa.base2("foo.txt")).to eq("foo.txt")
+      expect(Pa.base2("/home/foo.txt")).to eq("foo.txt")
+    end
+
+
+    it "(ext: true)" do
+			expect(Pa.base2("/home/foo.bar", ext: true)).to eq(["foo", "bar"])
+    end
+  end
+
+  describe ".base" do
+    it do
+      expect(Pa.base("/home/foo.txt")).to eq(Pa("foo.txt"))
+			expect(Pa.base("/home/foo.bar", ext: true)).to eq([Pa("foo"), "bar"])
+    end
+  end
+
+  describe ".name2" do
+    it do
+      expect(Pa.name2("foo.txt")).to eq("foo")
+      expect(Pa.name2("/home/foo.txt")).to eq("foo")
+    end
+  end
+
+  describe ".ext2" do
+    it do
+      expect(Pa.ext2("foo.txt")).to eq(".txt")
+      expect(Pa.ext2("foo")).to eq("")
+      expect(Pa.ext2("/home/foo.txt")).to eq(".txt")
+    end
+  end
+
+  describe ".fext2" do
+    it do
+      expect(Pa.fext2("foo.txt")).to eq("txt")
+      expect(Pa.fext2("foo")).to eq("")
+      expect(Pa.fext2("/home/foo.txt")).to eq("txt")
     end
   end
 
   describe "split2" do
     it "split a path into two part: dirname and basename" do
-      Pa.split2("/home/b/a.txt").should == ["/home/b", "a.txt"]
+      expect(Pa.split2("/home/b/a.txt")).to eq(["/home/b", "a.txt"])
     end
 
     it "with :all options: split all parts" do
-      Pa.split2("/home/b/a.txt", :all => true).should == ["/", "home", "b", "a.txt"]
+      expect(Pa.split2("/home/b/a.txt", :all => true)).to eq(["/", "home", "b", "a.txt"])
     end
   end
 
   describe "split" do
     it "is a special case" do
-      Pa.split("/home/b/a.txt").should == [Pa("/home/b"), "a.txt"]
+      expect(Pa.split("/home/b/a.txt")).to eq([Pa("/home/b"), "a.txt"])
     end
   end
 
   describe ".join2" do
     it "join a path" do
-      Pa.join2("/a", "b").should == "/a/b"
+      expect(Pa.join2("/a", "b")).to eq("/a/b")
     end
 
     it "skip nil values" do
-      Pa.join2("/a", "b", nil).should == "/a/b"
+      expect(Pa.join2("/a", "b", nil)).to eq("/a/b")
     end
 
     it "skip empty values" do
-      Pa.join2("/a", "b", "").should == "/a/b"
+      expect(Pa.join2("/a", "b", "")).to eq("/a/b")
     end
   end
 
-  describe ".build2" do
-    it "works" do
-      Pa.build2("/home/guten.avi"){ |p| "#{p.dir}/foo.#{p.ext}" }.should == "/home/foo.avi"
-      Pa.build2(dir: "/home", name: "guten", ext: "avi").should == "/home/guten.avi"
-      Pa.build2(path: "/home/guten.avi"){ |p| "#{p.dir}/foo.#{p.ext}" }.should == "/home/foo.avi"
-    end
-  end
-
-  describe ".relative_to2" do
+  describe "DELEGATE_CLASS_METHODS" do
     it do
-      expect(Pa.relative_to2("/home/a/b.txt", "/home/")).to eq("a/b.txt")
-      expect(Pa.relative_to2("/home/a/b.txt", "/home1/")).to be_nil
-    end
-  end
-
-  describe "class DELEGATE_METHODS" do
-    it "works" do
-      Pa.stub(:build2){|arg| arg }
-
-      Pa.build("foo").should == Pa("foo")
+      Pa.stub(:dir2) { "foo" }
+      expect(Pa.dir).to eq(Pa("foo"))
     end
   end
 
   describe "#initilaize" do
     it "support ~/foo path" do
-      Pa.new("~/foo").should == Pa("#{ENV['HOME']}/foo")
+      expect(Pa.new("~/foo")).to eq(Pa("#{ENV['HOME']}/foo"))
     end
   end
 
-  it "#absolute2" do
-    Pa.new("a.txt").absolute2.should == File.join(File.absolute_path(".", "."), "a.txt") # rbx
+  describe "DELEGATE_ATTR_METHODS2" do
+    it do
+      Pa.stub(:dir2) { "foo" }
+
+      a = Pa("foo")
+      expect(a.dir2).to eq("foo")
+      expect(a.instance_variable_get(:@dir2)).to eq("foo")
+    end
   end
 
-  it "#dir2" do
-    Pa.new("foo.avi").dir2.should == "."
+  describe "DELEGATE_ATTR_METHODS" do
+    it do
+      a = Pa("foo")
+      a.stub(:dir2) { "foo" }
+
+      expect(a.dir).to eq(Pa("foo"))
+      expect(a.instance_variable_get(:@dir)).to eq(Pa("foo"))
+    end
   end
 
-  it "#dir_strict2" do
-    Pa.new("foo.avi").dir_strict2.should == ""
-    Pa.new("./foo.avi").dir_strict2.should == "."
-    Pa.new("../foo.avi").dir_strict2.should == ".."
-    Pa.new("/foo.avi").dir_strict2.should == "/"
+  describe "DELEGATE_METHODS2" do
+    it do
+      Pa.stub(:join2) { "foo" }
+
+      expect(Pa("foo").join2).to eq("foo")
+    end
   end
 
-  it "#base2" do
-    Pa.new("foo.avi").base2.should == "foo.avi"
+  describe "DELEGATE_METHODS" do
+    it do
+      Pa.stub(:join2) { "foo" }
+
+      expect(Pa("foo").join).to eq(Pa("foo"))
+    end
   end
 
-  it "#name2" do
-    Pa.new("foo.avi").name2.should == "foo"
+  describe "DELEGATE_TO_PATH2" do
+    it do
+      a = Pa("foo")
+      a.path.stub("sub"){ "bar" }
+
+      expect(a.sub2).to eq("bar")
+    end
   end
 
-  it "#ext2" do
-    Pa.new("foo.avi").ext2.should == "avi"
-    Pa.new("foo").ext2.should == ""
+  describe "DELEGATE_TO_PATH" do
+    it do
+      a = Pa("foo")
+      a.path.stub("start_with?"){ "bar" }
+
+      expect(a.start_with?).to eq("bar")
+    end
   end
 
-  it "#fext2" do
-    Pa.new("foo.avi").fext2.should == ".avi"
-    Pa.new("foo").ext2.should == ""
+  describe "#inspect" do
+    it do
+      expect(Pa("/foo/bar.txt").inspect).to match(/path|absolute/)
+    end
   end
 
-  it "#inspect" do
-    Pa.new("/foo/bar.avi").inspect.should =~ /path|absolute/
+  describe "#to_s" do
+    it do
+      expect(Pa("bar.txt").to_s).to eq("bar.txt")
+    end
   end
 
-  it "#to_s" do
-    Pa.new("bar.avi").to_s.should == "bar.avi"
-  end
+  describe "#replace" do
+    it do
+      a = Pa("/home/guten")
+      a.replace "/bar/foo.txt"
 
-  it "#replace" do
-    a = Pa.new("/home/guten")
-    a.replace "/bar/foo.avi"
-
-    a.path.should == "/bar/foo.avi"
-    a.absolute2.should == "/bar/foo.avi"
-    a.dir2.should == "/bar"
-    a.fname2.should == "foo.avi"
-    a.base2.should == "foo.avi"
-    a.name2.should == "foo"
-    a.ext2.should == "avi"
-    a.fext2.should == ".avi"
+      expect(a.path     ).to eq("/bar/foo.txt")
+      expect(a.absolute2).to eq("/bar/foo.txt")
+      expect(a.dir2     ).to eq("/bar")
+      expect(a.base2    ).to eq("foo.txt")
+      expect(a.name2    ).to eq("foo")
+      expect(a.ext2     ).to eq(".txt")
+      expect(a.fext2    ).to eq("txt")
+    end
   end
 
 	describe "#<=>" do
 		it "runs ok" do
-			(Pa("/home/b") <=> Pa("/home/a")).should == 1
+			expect(Pa("/home/b") <=> Pa("/home/a")).to eq(1)
 		end
 	end
 
 	describe "#+" do
 		it "runs ok" do
-			(Pa("/home")+"~").should == Pa("/home~")
-		end
-	end
-
-	describe "#sub2" do
-		it "runs ok" do
-			Pa("/home/foo").sub2(/o/,"").should == "/hme/foo"
+			expect(Pa("/home")+"~").to eq(Pa("/home~"))
 		end
 	end
 
@@ -191,13 +234,7 @@ describe Pa do
 		it "runs ok" do
 			pa = Pa("/home/foo")
 			pa.sub!(/o/,"")
-			pa.should == Pa("/hme/foo")
-		end
-	end
-
-	describe "#gsub2" do
-		it "runs ok" do
-			Pa("/home/foo").gsub2(/o/,"").should == "/hme/f"
+			expect(pa).to eq(Pa("/hme/foo"))
 		end
 	end
 
@@ -205,67 +242,40 @@ describe Pa do
 		it "runs ok" do
 			pa = Pa("/home/foo")
 			pa.gsub!(/o/,"")
-			pa.should == Pa("/hme/f")
-		end
-	end
-
-	describe "#match" do
-		it "runs ok" do
-			Pa("/home/foo").match(/foo/)[0].should == "foo"
-		end
-	end
-
-	describe "#start_with?" do
-		it "runs ok" do
-			Pa("/home/foo").start_with?("/home").should be_true
-		end
-	end
-
-	describe "#end_with?" do
-		it "runs ok" do
-			Pa("/home/foo").end_with?("foo").should be_true
+			expect(pa).to eq(Pa("/hme/f"))
 		end
 	end
 
 	describe "#=~" do
 		it "runs ok" do
-			(Pa("/home/foo") =~ /foo/).should be_true
+			expect((Pa("/home/foo") =~ /foo/)).to be_true
 		end
 	end
 
-  describe "#build2" do
-    it "works" do
-      Pa.new("/home/guten.avi").build2(path: "/foo/bar.avi").should == "/foo/bar.avi"
-      Pa.new("/home/guten.avi").build2(dir: "foo").should == "foo/guten.avi"
-      Pa.new("/home/guten.avi").build2(fname: "bar").should == "/home/bar"
-      Pa.new("/home/guten.avi").build2(base: "bar").should == "/home/bar"
-      Pa.new("/home/guten.avi").build2(name: "bar").should == "/home/bar.avi"
-      Pa.new("/home/guten.avi").build2(ext: "ogg").should == "/home/guten.ogg"
-      Pa.new("/home/guten.avi").build2(fext: ".ogg").should == "/home/guten.ogg"
-      Pa.new("/home/guten.avi").build2(dir: "foo", name: "bar", ext: "ogg").should == "foo/bar.ogg"
+  describe "#change2" do
+    before :all do
+      @a = Pa("/home/a.txt")
     end
 
-    it "percedure" do
-      Pa.new("/home/guten.avi").build2(path: "foo", fname: "bar").should == "foo"
-      Pa.new("/home/guten.avi").build2(fname: "foo", name: "bar").should == "/home/foo"
-      Pa.new("/home/guten.avi").build2(fname: "foo", ext: "ogg").should == "/home/foo"
-      Pa.new("/home/guten.avi").build2(fname: "foo", fext: ".ogg").should == "/home/foo"
-      Pa.new("/home/guten.avi").build2(fext: ".ogg", ext: "mp3").should == "/home/guten.ogg"
+    it do
+      expect(@a.change2(path: "foo")).to eq("foo")
+      expect(@a.change2(dir: "foo")).to eq("foo/a.txt")
+      expect(@a.change2(base: "bar")).to eq("/home/bar")
+      expect(@a.change2(name: "bar")).to eq("/home/bar.txt")
+      expect(@a.change2(ext: ".epub")).to eq("/home/a.epub")
     end
-  end
 
-  describe "instance DELEGATE_METHODS2" do
-    it "works" do
-      Pa.stub(:join2) { "foo" }
-      Pa.new("foo").join2.should == "foo"
+    it "(complex)" do
+      expect(@a.change2(dir: "foo", base: "bar")).to eq("foo/bar")
+      expect(@a.change2(dir: "foo", name: "bar", ext: ".epub")).to eq("foo/bar.epub")
+      expect(@a.change2(dir: "foo", name: "bar")).to eq("foo/bar.txt")
+      expect(@a.change2(name: "bar", ext: ".epub")).to eq("/home/bar.epub")
     end
-  end
 
-  describe "instance DELEGATE_METHODS" do
-    it "works" do
-      Pa.stub(:build2) { "foo" }
-
-      Pa.new("foo").build.should == Pa("foo")
+    it "has a percudure" do
+      expect(@a.change2(path: "foo", dir: "bar")).to eq("foo")
+      expect(@a.change2(base: "foo", name: "bar")).to eq("/home/foo")
+      expect(@a.change2(base: "foo", ext: ".ogg")).to eq("/home/foo")
     end
   end
 end

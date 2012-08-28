@@ -30,8 +30,10 @@ Pa.touch "a b c", :verbose => true
 class Pa
   module Cmd
     extend Util::Concern
+
+    DELEGATE_CLASS_METHODS = [ :home ]
+
     module ClassMethods
-      DELEGATE_METHODS = [ :home ]
 
       def home2
         Dir.home 
@@ -654,8 +656,8 @@ class Pa
         end
       end # _copy
 
-      DELEGATE_METHODS.each do |mth|
-        class_eval <<-EOF
+      DELEGATE_CLASS_METHODS.each do |mth|
+        eval <<-EOF
           def #{mth}(*args, &blk)
             Pa(#{mth}2(*args, &blk))
           end

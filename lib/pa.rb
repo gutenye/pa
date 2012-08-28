@@ -9,24 +9,27 @@ all class methods support Pa as parameter.
 
 support "~/foo" path. Pa("~/foo") is "/home/x/foo"
 
-Examples:
----------
-	pa = Pa('/home/a.vim')
-	pa.dir  	#=> '/home'
-	pa.base 	#=> 'a.vim'
-	pa.name 	#=> 'a'
-	pa.ext  	#=> 'vim'
-	pa.fext		#=> '.vim'
-
-	pa.dir_pa #=> Pa('/home')  # similar, but return <#Pa>
-
 Filename parts:
 ---------
+
 	/home/guten.ogg
-	  base: guten.ogg
-	  dir: /home
-	  ext: ogg
-	  name: guten
+
+	  dir:    /home
+	  base:   guten.ogg
+    name:   guten
+	  ext:    .ogg
+    fext:   ogg
+
+Examples:
+---------
+
+	pa = Pa('/home/a.vim')
+	pa.dir2  	-> '/home'
+	pa.base2 	-> 'a.vim'
+  pa.name2   -> 'a'
+	pa.ext2  	-> '.vim'
+
+	pa.dir    -> Pa('/home')  # similar, but return <#Pa>
 
 Additional method list
 ---------------------
@@ -34,20 +37,25 @@ Additional method list
 * Pa.expand _aliss from `File.expand_path`_
 
 === create, modify path
+
 Example1:
+
 	pa = Pa('/home/foo')
-	pa.join('a.txt') #=> new Pa('/home/foo/a.txt')
+	pa.join2('a.txt')       -> '/home/foo/a.txt'
+	pa.join('a.txt')        -> Pa('/home/foo/a.txt')
 
 Example2:
+
 	pa1 = Pa('/home/foo/a.txt')
 	pa2 = Pa('/home/bar/b.txt')
 	pa1+'~' #=> new Pa('/home/foo/a.txt~')
 	Pa.join(pa1.dir, pa2.base) #=> '/home/foo/b.txt'
 
 Example3:
+
 	pa1 = Pa('/home/foo/a.txt')
 	pa2 = Pa('/home/bar')
-	pa2.join(pa1.base)  #=> new Pa('/home/bar/a.txt')
+	pa2.join2(pa1.base)    -> '/home/bar/a.txt'
 		
 **Attributes**
 
@@ -57,10 +65,9 @@ Example3:
   absolute  a      absolute path
   dir       d      dirname of a path
   base      b      basename of a path
-	fname     fn     alias of base
-  name      n      filename of a path
-  ext       e      extname of a path,  return "" or "ogg"  
-  fext      fe     return "" or ".ogg"
+  ext       e      extname of a path
+	name      n     filename without ext
+  fext      fe     extname without "."
 
 == used with rspec
 
@@ -75,9 +82,9 @@ class Pa
 	Error = Class.new Exception
 	EUnkonwType = Class.new Error
 
-  class << self
-    DELEGATE_METHODS = [:join, :build, :relative_to]
+  DELEGATE_CLASS_METHODS = [:absolute, :dir, :dir_stict, :name, :ext, :fext] 
 
+  class << self
     # get path of an object. 
     #
     # return obj#path if object has a 'path' instance method
@@ -99,26 +106,98 @@ class Pa
       end
     end
 
+    def absolute2(path)
+      File.absolute_path(get(path), ".") # rbx
+    end
+
+    # => ".", "..", "/", "c:"
+    #
+    # "foo" => "."
+    # "./foo" => "."
+    # "../../foo" => "../.."
+    #
+    def dir2(path) 
+      File.dirname(get(path))
+    end
+
+    # Pa("foo") => ""
+    # Pa("./foo") => "."
+    def dir_strict2(path)
+      dir = File.dirname(get(path))
+
+      if %w[.].include?(dir) && path !~ %r~^\./~
+        ""
+      else
+        dir
+      end
+    end
+
+    # get a basename of a path
+    #
+    # @example
+    #   Pa.basename("foo.bar.c", ext: true)  #=> \["foo.bar", "c"]
+    #
+    # @param [String,Pa] name
+    # @param [Hash] o options
+    # @option o [Boolean, String] :ext (false) return \[name, ext] if true
+    #   
+    # @return [String] basename of a path unless o[:ext]
+    # @return [Array<String>] \[name, ext] if o[:ext].  
+    def base2(name, o={})
+      name = File.basename(get(name))
+      if o[:ext]
+        name, ext = name.match(/^(.+?)(?:\.([^.]+))?$/).captures
+        [ name, (ext || "")]
+      else
+        name
+      end
+    end
+
+    def base(*args, &blk)
+      ret = base2(*args, &blk)
+
+      if Array === ret
+        [ Pa(ret[0]), ret[1] ]
+      else
+        Pa(ret)
+      end
+    end
+
+    def name2(path)
+      File.basename(get(path)).match(/^(.+?)(?:\.([^.]+))?$/)[1]
+    end
+
+      # -> ".ogg", ""  
+    def ext2(path)
+      File.extname(get(path))
+    end
+
+      # => "ogg", ""
+    def fext2(path)
+      File.extname(get(path)).gsub(/^\./, "") 
+    end
+
     # split path
     #
     # @example
-    # 	path="/home/a/file"
-    # 	split2(path)  #=> "/home/a", "file"
-    # 	split2(path, :all => true)  #=> "/", "home", "a", "file"
     #
-    # @param [String,Pa] name
+    # 	path="/home/a/file"
+    # 	split2(path)                -> ["/home/a", "file"]
+    # 	split2(path, :all => true)  -> ["/", "home", "a", "file"]
+    #
+    # @param [String,Pa] path
     # @param [Hash] o option
     # @option o [Boolean] :all split all parts
     # @return [Array<String>] 
-    def split2(name, o={})
-      dir, fname = File.split(get(name))
-      ret = Util.wrap_array(File.basename(fname))
+    def split2(path, o={})
+      dir, base = File.split(get(path))
+      ret = Util.wrap_array(File.basename(base))
 
       if o[:all]
         loop do
-          dir1, fname = File.split(dir)
+          dir1, base = File.split(dir)
           break if dir1 == dir
-          ret.unshift fname
+          ret.unshift base
           dir = dir1
         end
       end
@@ -134,6 +213,10 @@ class Pa
 
     # join paths, skip nil and empty string.
     #
+    # @example
+    #
+    #  Pa.join2("", "foo", nil, "bar")  -> "foo/bar"
+    #
     # @param [*Array<String>] *paths
     # @return [String]
     def join2(*paths)
@@ -147,34 +230,10 @@ class Pa
       File.join(*paths)
     end
 
-    # build a path
-    # options :path, :dir, :fname, :base, :name, :fext, :ext
-    # use Pa.join2
-    # @example
-    # 
-    #  Pa.build2(dir: "/home", name: "guten", ext: "avi") => "/home/guten.avi
-    #  Pa.build2("/home/guten.avi") { |pa| "#{pa.dir}/foo.#{pa.ext}" } => "/home/foo.avi
-    #
-    # @overload build2(path){|pa|=>String}
-    # @overload build2(data={})
-    # @overload build2(data={}){}
-    def build2(*args, &blk)
-      data = Hash===args.last ? args.pop : {}
-      path = args[0] || build_path2(data)
-      blk ||= proc {|pa| pa.p }
-
-      blk.call(Pa(path))
-    end
-
-    # @return [String,nil]
-    def relative_to2(path, dir)
-      path.start_with?(dir) ? path[dir.length()..-1] : nil
-    end
-
-    DELEGATE_METHODS.each { |mth| 
-      class_eval <<-EOF
-        def #{mth}(*args, &blk)
-          Pa(Pa.#{mth}2(*args, &blk))
+    DELEGATE_CLASS_METHODS.each {|meth|
+      eval <<-EOF
+        def #{meth}(*args, &blk)
+          Pa(#{meth}2(*args, &blk))
         end
       EOF
     }
@@ -190,31 +249,17 @@ class Pa
         Pa(obj)
       end
     end
-
-    def build_path2(data={})
-      if data[:path]
-        path = data[:path]
-      elsif data[:fname] || data[:base]
-        path = join2(data[:dir], data[:fname] || data[:base])
-      else
-        path = join2(data[:dir], data[:name])
-        if data[:fext]
-          path << data[:fext]
-        elsif data[:ext]
-          path << ".#{data[:ext]}"
-        end
-      end
-
-      path
-    end
   end
 
+  DELEGATE_ATTR_METHODS2 = [ :dir2, :dir_strict2, :base2, :name2, :ext2, :fext2]
+  DELEGATE_ATTR_METHODS = [ :absolute, :dir, :dir_strict, :rel, :rea ]
   DELEGATE_METHODS2 = [ :join2 ]
-  DELEGATE_METHODS = [ :build, :join ]
-  DELEGATE_ATTR_METHODS = [ :dir, :rel, :rea ]
+  DELEGATE_METHODS = [ :change, :join]
+  DELEGATE_TO_PATH2 = [ :sub2, :gsub2 ]
+  DELEGATE_TO_PATH = [:match, :start_with?, :end_with?]
 
 	attr_reader :path2
-  attr_reader :absolute2, :dir2, :dir_strict2, :base2, :fname2, :name2, :short2, :ext2, :fext2, :rel2, :rea2
+  attr_reader :absolute2, :dir2, :dir_strict2, :base2, :name2, :short2, :ext2, :fext2, :rel2, :rea2
   attr_reader :options
 
   # @param [Hash] o option
@@ -237,6 +282,54 @@ class Pa
 	end
 	include chainable
 
+  DELEGATE_ATTR_METHODS2.each {|meth2|
+    class_eval <<-EOF
+      def #{meth2}(*args, &blk)
+        @#{meth2} ||= Pa.#{meth2}(path, *args, &blk)
+      end
+    EOF
+  }
+
+  DELEGATE_ATTR_METHODS.each {|meth|
+    class_eval <<-EOF
+      def #{meth}(*args, &blk)
+        @#{meth} ||= Pa(#{meth}2(*args, &blk))
+      end
+    EOF
+  }
+
+  DELEGATE_METHODS2.each { |meth2|
+    class_eval <<-EOF
+      def #{meth2}(*args, &blk)
+        Pa.#{meth2}(path, *args, &blk)
+      end
+    EOF
+  }
+
+  DELEGATE_METHODS.each {|meth|
+    class_eval <<-EOF
+      def #{meth}(*args, &blk)
+        Pa(#{meth}2(*args, &blk))
+      end
+    EOF
+  }
+
+  DELEGATE_TO_PATH2.each {|meth2|
+    class_eval <<-EOF
+      def #{meth2}(*args, &blk)
+        path.#{meth2[0...-1]}(*args, &blk)
+      end
+    EOF
+  }
+
+  DELEGATE_TO_PATH.each {|meth|
+    class_eval <<-EOF
+      def #{meth}(*args, &blk)
+        path.#{meth}(*args, &blk)
+      end
+    EOF
+  }
+
   def base_dir
     @base_dir ||= (options[:base_dir] || ".")
   end
@@ -250,69 +343,12 @@ class Pa
   end
 
   def absolute2
-    @absolute2 ||= File.absolute_path(rea2, ".") # rbx
+    @absolute2 ||= Pa.absolute2(rea2)
   end
-
-  def absolute
-    @absolute ||= Pa(absolute2)
-  end
-
-  # => ".", "..", "/", "c:"
-  #
-  # "foo" => "."
-  # "./foo" => "."
-  # "../../foo" => "../.."
-  #
-  def dir2
-    @dir2 ||= File.dirname(path)
-  end
-
-  def dir
-    @dir ||= Pa(dir2)
-  end
-
-  # Pa("foo") => ""
-  # Pa("./foo") => "."
-  def dir_strict2
-    return @dir_strict2 if @dir_strict2
-
-    dir = File.dirname(path)
-
-    @dir_strict2 = if %w[.].include?(dir) && path !~ %r~^\./~
-      ""
-    else
-      dir
-    end
-  end
-
-  def dir_strict
-    @dir_strict ||= Pa(dir_strict2)
-  end
-
-  def base2
-    @base2 ||= File.basename(path)
-  end
-
-  def name2
-    @name2 ||= File.basename(path).match(/^(.+?)(?:\.([^.]+))?$/)[1]
-  end
-
-  # => "ogg", ""  
-  def ext2
-    @ext2 ||= File.basename(path).match(/^(.+?)(?:\.([^.]+))?$/)[2] || ""
-  end
-
-  # => ".ogg", ""
-  def fext2
-    @fext2 ||= ext2.empty? ? "" : ".#{ext2}"
-  end
-
-  alias fname2 base2
 
   # both x, x2 return String
 	alias path path2
   alias base base2
-  alias fname fname2
   alias name name2
   alias ext ext2
   alias fext fext2
@@ -325,12 +361,10 @@ class Pa
   alias d_s2 dir_strict2
   alias	b2 base2
   alias n2 name2
-  alias fn2 fname2
   alias e2 ext2
   alias fe2 fext2
   alias p path
   alias b base
-  alias fn fname
   alias n name
   alias e ext
   alias fe fext
@@ -360,6 +394,7 @@ class Pa
 	# @return [Pa] the same Pa object
 	def replace(path)
 		@path2 = Pa.get(path)
+
 		initialize_variables
 	end
 
@@ -400,16 +435,6 @@ class Pa
     @short ||= Pa(short2)
   end
 
-  # @return [String]
-  def sub2(*args, &blk)
-    path.sub(*args, &blk)
-  end
-
-  # @return [String]
-  def gsub2(*args, &blk)
-    path.gsub(*args, &blk)
-  end
-
   # @return [Pa]
   def sub(*args, &blk)
     Pa(sub2(*args, &blk))
@@ -422,67 +447,35 @@ class Pa
 
   # @return [Pa]
   def sub!(*args,&blk)
-    self.replace path.sub(*args,&blk)
+    replace path.sub(*args,&blk)
   end
 
   # @return [Pa]
   def gsub!(*args,&blk)
-    self.replace path.gsub(*args,&blk)
+    replace path.gsub(*args,&blk)
   end
 
-  # @return [MatchData]
-  def match(*args,&blk)
-    path.match(*args,&blk)
-  end 
-
-  # @return [Boolean]
-  def start_with?(*args)
-    path.start_with?(*args)
-  end
-
-  # @return [Boolean]
-  def end_with?(*args)
-    path.end_with?(*args)
-  end
-
-  # @return [String]
-  def build2(data={}, &blk)
+  # Change some parts of the path.
+  #
+  # path
+  # dir base 
+  # dir name ext
+  # ...  
+  #
+  # @return [String] path
+  def change2(data={}, &blk)
     return Pa.new(blk.call(self)) if blk
 
-    d = if data[:path]
-      {path: data[:path]}
-    elsif data[:fname] || data[:base]
-      {dir: dir_strict2, fname: data[:fname], base: data[:base]}
+    if data[:path]
+      return data[:path]
+    elsif data[:base]
+      return File.join(data[:dir] || dir2, data[:base])
     else
-      {dir: dir_strict2, name: name2, ext: ext2}.merge(data)
+      dir, name, ext = data[:dir] || dir2, data[:name] || name2, data[:ext] || ext2
+
+      File.join(dir, name)+ext
     end
-
-    Pa.build2(d)
   end
-
-  DELEGATE_METHODS2.each { |mth2|
-    class_eval <<-EOF
-      def #{mth2}(*args, &blk)
-        Pa.#{mth2}(path, *args, &blk)
-      end
-    EOF
-  }
-
-  DELEGATE_METHODS.each {|mth|
-    class_eval <<-EOF
-      def #{mth}(*args, &blk)
-        Pa(#{mth}2(*args, &blk))
-      end
-    EOF
-  }
-
-  DELEGATE_ATTR_METHODS.each {|mth|
-    class_eval <<-EOF
-      def #{mth}(*args, &blk)
-        @#{mth} ||= Pa(#{mth}2(*args, &blk))
-      end
-    EOF
-  }
 end
 
 require "pa/path"

@@ -15,102 +15,140 @@ class Pa
   module Path
     extend Util::Concern
 
-    module ClassMethods
-      DELEGATE_METHODS = [:pwd, :dir, :absolute, :expand, :real, :parent]
+    DELEGATE_CLASS_METHODS = [:pwd, :dir, :expand, :real, :parent, 
+      :relative_to, :shorten, :delete_ext, :add_ext ]
 
-      # return current work directory
+    module ClassMethods
+
+      # Return current work directory
+      #
       # @return [String] path
       def pwd2
         Dir.getwd 
       end
 
-      # is path an absolute path ?
+      # Is path an absolute path ?
       #
       # @param [String,Pa] path
       # @return [Boolean]
       def absolute?(path) 
-        path=get(path) 
-        File.absolute_path(path, ".") == path  # rbx
+        p = get(path) 
+        File.absolute_path(p, ".") == p  # rbx
       end
 
-      # is path a dangling symlink?
+      # Is path a dangling symlink?
       #
       # a dangling symlink is a dead symlink.
       #
       # @param [String,Pa] path
       # @return [Boolean]
-      def dangling? path
-        path=get(path)
-        if File.symlink?(path)
-          src = File.readlink(path)
+      def dangling?(path)
+        p = get(path)
+
+        if File.symlink?(p)
+          src = File.readlink(p)
           not File.exists?(src)
         else
           nil
         end
-      end # def dsymlink?
-
-      def dir2(path)
-        File.dirname(path)
       end
 
-      # get a basename of a path
+      # Alias from File.expand_path
       #
-      # @example
-      #   Pa.basename("foo.bar.c", ext: true)  #=> \["foo.bar", "c"]
-      #
-      # @param [String,Pa] name
-      # @param [Hash] o options
-      # @option o [Boolean, String] :ext (false) return \[name, ext] if true
-      #   
-      # @return [String] basename of a path unless o[:ext]
-      # @return [Array<String>] \[name, ext] if o[:ext].  
-      def base2(name, o={})
-        name = File.basename(get(name))
-        if o[:ext]
-          name, ext = name.match(/^(.+?)(?:\.([^.]+))?$/).captures
-          [ name, (ext || "")]
-        else
-          name
-        end
-      end
-
-      def base(*args, &blk)
-        rst = base2(*args, &blk)
-
-        if Array===rst
-          [ Pa(rst[0]), rst[1] ]
-        else
-          rst
-        end
-      end
-
-      # ext of a path
-      #
-      # @example
-      # 	"a.ogg" => "ogg"
-      # 	"a" => nil
-      #
-      # @param [String,Pa] path
-      # @return [String]
-      def ext2 path
-        _, ext = get(path).match(/\.([^.]+)$/).to_a
-        ext
-      end
-
-      alias ext ext2
-
-      # alias from File.absolute_path
-      # @param [String,Pa] path
-      # @return [String]
-      def absolute2(path) 
-        File.absolute_path(get(path), ".") # rbx
-      end
-
-      # alias from File.expand_path
       # @param [String,Pa] path
       # @return [String]
       def expand2(path) 
         File.expand_path get(path) 
+      end
+
+      # Path relative_to? dir
+      #
+      # @example
+      #
+      #   Pa.relative_to?("/home/foo", "/home")  -> true
+      #   Pa.relative_to?("/home1/foo", "/home")  -> false
+      #
+      def relative_to?(path, dir)
+        path_parts = Pa.split2(get(path), all: true)
+        dir_parts = Pa.split2(get(dir), all: true)
+
+        index = -1
+        dir_parts.all? {|part| 
+          index += 1
+          path_parts[index] == part
+        }
+      end
+
+      # Delete the head.
+      #
+      # @example
+      #   
+      #   Pa.relative_to2("/home/foo", "/home") -> "foo"
+      #   Pa.relative_to2("/home/foo", "/home/foo") -> "."
+      #   Pa.relative_to2("/home/foo", "/bin") -> "/home/foo"
+      #
+      #   Pa.relative_to2("/home/foo", "/home/foo/") -> "."
+      #   Pa.relative_to2("/home/foo/", "/home/foo") -> "."
+      #
+      # @return [String]
+      def relative_to2(path, dir)
+        p = get(path)
+
+        if relative_to?(p, dir)
+          path_parts = Pa.split(p, all: true)
+          dir_parts = Pa.split(dir, all: true)
+          ret = File.join(*path_parts[dir_parts.length..-1])
+          ret == "" ? "." : ret
+        else
+          p
+        end
+      end
+
+      # Return true if a path has the ext.
+      #
+      # @example
+      #
+      #   Pa.has_ext?("foo.txt", ".txt")   -> true
+      #   Pa.has_ext?("foo", ".txt")        -> false
+      #
+      def has_ext?(path, ext)
+        Pa.ext2(get(path)) == ext
+      end
+
+      # Delete the tail.
+      #
+      # @example
+      #
+      #   Pa.delete_ext2("foo.txt", ".txt")      -> "foo"
+      #   Pa.delete_ext2("foo", ".txt")          -> "foo"
+      #   Pa.delete_ext2("foo.epub", ".txt")     -> "foo.epub"
+      #
+      def delete_ext2(path, ext)
+        p = get(path)
+
+        if has_ext?(p, ext)
+          p[0...p.rindex(ext)]
+        else
+          p
+        end
+      end
+
+      # Ensure the tail
+      #
+      # @example
+      #
+      #  Pa.add_ext2("foo", ".txt")         -> "foo.txt"
+      #  Pa.add_ext2("foo.txt", ".txt")     -> "foo.txt"
+      #  Pa.add_ext2("foo.epub", ".txt")    -> "foo.txt.epub"
+      #
+      def add_ext2(path, ext)
+        p = get(path)
+
+        if Pa.ext2(p) == ext
+          p
+        else
+          "#{p}#{ext}"
+        end
       end
 
       # shorten2 a path,
@@ -119,10 +157,20 @@ class Pa
       # @param [String,Pa] path
       # @return [String]
       def shorten2(path)
-        get(path).sub /^#{Regexp.escape(ENV["HOME"])}/, "~"
-      end
+        p = get(path)
+        home = Pa.home2
 
-      alias shorten shorten2
+        return p if home.empty?
+
+        ret = relative_to2(p, home)
+
+        if ret == p
+          p
+        else
+          ret == "." ? "" : ret
+          File.join("~", ret)
+        end
+      end
 
       # real path
       def real2(path) 
@@ -142,15 +190,19 @@ class Pa
         path
       end
 
-      DELEGATE_METHODS.each { |mth|
+      DELEGATE_CLASS_METHODS.each { |mth|
         mth2 = "#{mth}2"
 
-        class_eval <<-EOF
+        eval <<-EOF
           def #{mth}(*args, &blk)
             Pa(Pa.#{mth2}(*args, &blk))
           end
         EOF
       }
+
+
+    private
+
     end
 
     DELEGATE_METHODS2 = [ :parent2 ]

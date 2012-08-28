@@ -136,7 +136,6 @@ describe Pa do
     end
   end
 
-
   describe "#touch" do
     it "works" do
       Pa.touch("file1", "file2")
@@ -546,7 +545,7 @@ describe Pa do
 		end
 	end
 
-  describe "class DELEGATE_METHODS" do
+  describe "DELEGATE_CLASS_METHODS" do
     it "works" do
       Pa.stub(:home2) { "/home/foo" } 
       Pa.home.should == Pa("/home/foo")

@@ -44,60 +44,66 @@ describe Pa do
     end
   end
 
-  describe ".dir2" do
-    it "get a path's directory name" do
-      Pa.dir2("/home/guten").should == "/home"
-    end
-  end
-
-	describe ".base2" do
-		it "get name, ext with :ext => true" do
-			Pa.base2("/home/foo.bar", ext: true).should == ["foo", "bar"]
-		end
-	end
-
-  describe ".base" do
-    it "works" do
-			Pa.base("/home/foo.bar", ext: true).should == [Pa("foo"), "bar"]
-    end
-  end
-
-  describe ".ext2" do
-    it "get a path's extension" do
-      Pa.ext2("/home/a.txt").should == "txt"
-    end
-
-    it "return nil when don extension" do
-      Pa.ext2("/home/a").should == nil
-    end
-
-    it "with complex" do
-      Pa.ext2("/home/a.b.c.txt").should == "txt"
-    end
-  end
-
-  describe ".absolute2" do
-    it "returns absolute_path" do
-      Pa.absolute2(".").should == File.absolute_path(".", ".") # rbx
-    end
-  end
-
   describe ".expand2" do
     it "expand_path" do
       Pa.expand2("~").should == File.expand_path("~") 
     end
   end
 
-	describe ".shorten2" do
-		it "short /home/usr/file into ~/file" do
-			ENV["HOME"] = "/home/foo"
-			Pa.shorten2("/home/foo/file").should == "~/file"
-		end
+  describe ".relative_to?" do
+    it do
+      expect(Pa.relative_to?("/home/foo", "/home")).to be_true
+      expect(Pa.relative_to?("/home1/foo", "/home")).to be_false
+    end
+  end
 
-		it "not short /home/other-user/file" do
-			ENV["HOME"] = "/home/foo"
-			Pa.shorten2("/home/bar/file").should == "/home/bar/file"
+	describe ".relative_to2" do
+		it do
+      expect(Pa.relative_to2("/home/foo", "/home")).to eq("foo")
+      expect(Pa.relative_to2("/home/foo", "/home/foo")).to eq(".")
+      expect(Pa.relative_to2("/home/foo", "/bin")).to eq("/home/foo")
+
+      expect(Pa.relative_to2("/home/foo", "/home/foo/")).to eq(".")
+      expect(Pa.relative_to2("/home/foo/", "/home/foo")).to eq(".")
+
+      expect(Pa.relative_to2("/home1/foo", "/home")).to eq("/home1/foo")
 		end
+	end
+
+  describe ".has_ext?" do
+    it do
+      expect(Pa.has_ext?("foo.txt", ".txt")).to be_true
+      expect(Pa.has_ext?("foo", ".txt")).to be_false
+      expect(Pa.has_ext?("foo.1txt", ".txt")).to be_false
+    end
+  end
+
+  describe ".delete_ext2" do
+    it do
+      expect(Pa.delete_ext2("foo.txt", ".txt")).to eq("foo")
+      expect(Pa.delete_ext2("foo", ".txt")).to eq("foo")
+      expect(Pa.delete_ext2("foo.epub", ".txt")).to eq("foo.epub")
+    end
+  end
+
+  describe ".add_ext2" do
+    it do
+      expect(Pa.add_ext2("foo", ".txt")).to eq("foo.txt")
+      expect(Pa.add_ext2("foo.txt", ".txt")).to eq("foo.txt")
+      expect(Pa.add_ext2("foo.epub", ".txt")).to eq("foo.epub.txt")
+    end
+  end
+
+
+	describe ".shorten2" do
+    it do
+      Pa.stub(:home2) { "/home"}
+			expect(Pa.shorten2("/home/file")).to eq("~/file")
+			expect(Pa.shorten2("/home1/file")).to eq("/home1/file")
+
+      Pa.stub(:home2) { "" }
+			expect(Pa.shorten2("/home/file")).to eq("/home/file")
+    end
 	end
 
   describe ".real2" do
@@ -118,24 +124,24 @@ describe Pa do
 		end
 	end
 
-  describe "class DELEGATE_METHODS" do
-    it "works" do
+  describe "DELEGATE_CLASS_METHODS" do
+    it do
       Pa.should_receive(:pwd2).with(1,2)
 
       Pa.pwd(1,2)
     end
   end
 
-  describe "instance DELEGATE_METHODS2" do
-    it "works" do
+  describe "DELEGATE_METHODS2" do
+    it do
       Pa.should_receive(:parent2).with("foo", 1, 2)
 
       Pa.new("foo").parent2(1, 2)
     end
   end
 
-  describe "instance DELEGATE_METHODS" do
-    it "works" do
+  describe "DELEGATE_METHODS" do
+    it do
       p = Pa.new("foo")
 
       p.should_receive(:parent2).with(1,2)
