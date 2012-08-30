@@ -1,11 +1,12 @@
-source :rubygems
+source "https://rubygems.org"
 
 gem "pd"
 
 group :development do
   gem "thor"
   gem "rspec"
-  gem "watchr"
+  gem "guard"
+  gem "guard-rspec"
 end
 
 #gemspec
