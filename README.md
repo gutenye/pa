@@ -7,7 +7,7 @@
 | License:       | MIT-LICENSE                          |
 | Documentation: | http://rubydoc.info/gems/pa/frames   |
 | Issue Tracker: | https://github.com/GutenYe/pa/issues |
-| Platforms:     | Ruby 1.9.3, Rubinius                 |
+| Ruby Versions: | Ruby 1.9.3, Rubinius                 |
 
 Usage
 -----
@@ -33,17 +33,24 @@ Install
 
 	gem install pa
 
+Development [![Dependency Status](https://gemnasium.com/GutenYe/pa.png?branch=master)](https://gemnasium.com/GutenYe/pa) [![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/GutenYe/pa)
+===========
+
 Contributing
 -------------
 
-* Feel free to join the project and make contributions (by submitting a pull request)
-* Submit any bugs/features/ideas to github issue tracker
+* Submit any bugs/features/ideas to github issue tracker.
+
+Pull requests are very welcome! Please try to follow these simple rules if applicable:
+
+* Please create a topic branch for every separate change you make.
+* Make sure your patches are well tested. All specs run with `rake test:portability` must pass.
 * Coding Style Guide: https://gist.github.com/1105334
 
 Contributors
 ------------
 
-* [contributors](https://github.com/GutenYe/pa/contributors)
+[https://github.com/GutenYe/pa/contributors](https://github.com/GutenYe/pa/contributors)
 
 Copyright
 ---------
