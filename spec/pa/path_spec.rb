@@ -45,8 +45,14 @@ describe Pa do
   end
 
   describe ".expand2" do
-    it "expand_path" do
-      Pa.expand2("~").should == File.expand_path("~") 
+    it do
+      Pa.expand2("~", ".").should == File.expand_path("~", ".") 
+    end
+  end
+
+  describe ".real2" do
+    it do
+      Pa.real2(".", ".").should == File.realpath(".", ".")
     end
   end
 
@@ -94,7 +100,6 @@ describe Pa do
     end
   end
 
-
 	describe ".shorten2" do
     it do
       Pa.stub(:home2) { "/home"}
@@ -105,10 +110,6 @@ describe Pa do
 			expect(Pa.shorten2("/home/file")).to eq("/home/file")
     end
 	end
-
-  describe ".real2" do
-    Pa.real2(".").should == File.realpath(".")
-  end
 
 	describe ".parent2" do
 		before :each do

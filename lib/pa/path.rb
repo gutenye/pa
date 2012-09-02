@@ -57,8 +57,16 @@ class Pa
       #
       # @param [String,Pa] path
       # @return [String]
-      def expand2(path) 
-        File.expand_path get(path) 
+      def expand2(name, dir=".") 
+        File.expand_path(get(name), dir) 
+      end
+
+      # Alias from Filel.realpath
+      #
+      # @param [String, Pa] path
+      # @return [String]
+      def real2(name, dir=".")
+        File.realpath(get(name), dir)
       end
 
       # Path relative_to? dir
@@ -170,11 +178,6 @@ class Pa
           ret == "." ? "" : ret
           File.join("~", ret)
         end
-      end
-
-      # real path
-      def real2(path) 
-        File.realpath get(path)
       end
 
       # get parent path

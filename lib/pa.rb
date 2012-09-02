@@ -106,8 +106,8 @@ class Pa
       end
     end
 
-    def absolute2(path)
-      File.absolute_path(get(path), ".") # rbx
+    def absolute2(name, dir=".")
+      File.absolute_path(get(name), dir)
     end
 
     # => ".", "..", "/", "c:"
