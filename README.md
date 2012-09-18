@@ -36,21 +36,14 @@ Install
 Development [![Dependency Status](https://gemnasium.com/GutenYe/pa.png?branch=master)](https://gemnasium.com/GutenYe/pa) [![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/GutenYe/pa)
 ===========
 
-Contributing
+Contributing 
 -------------
 
 * Submit any bugs/features/ideas to github issue tracker.
 
-Pull requests are very welcome! Please try to follow these simple rules if applicable:
+Please see [Contibution Documentation](https://github.com/GutenYe/pa/blob/master/CONTRIBUTING.md).
 
-* Please create a topic branch for every separate change you make.
-* Make sure your patches are well tested. All specs run with `rake test:portability` must pass.
-* Coding Style Guide: https://gist.github.com/1105334
-
-Contributors
-------------
-
-[https://github.com/GutenYe/pa/contributors](https://github.com/GutenYe/pa/contributors)
+A list of [Contributors](https://github.com/GutenYe/pa/contributors)
 
 Copyright
 ---------
