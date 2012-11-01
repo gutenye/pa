@@ -19,7 +19,6 @@ class Pa
       :relative_to, :shorten, :delete_ext, :add_ext ]
 
     module ClassMethods
-
       # Return current work directory
       #
       # @return [String] path
@@ -116,29 +115,31 @@ class Pa
       #
       # @example
       #
-      #   Pa.has_ext?("foo.txt", ".txt")   -> true
-      #   Pa.has_ext?("foo", ".txt")        -> false
+      #   Pa.has_ext?("foo.txt", ".epub", ".txt")   -> true
+      #   Pa.has_ext?("foo", ".txt")       -> false
       #
-      def has_ext?(path, ext)
-        Pa.ext2(get(path)) == ext
+      def has_ext?(path, *exts)
+        exts.include? Pa.ext2(get(path))
       end
 
       # Delete the tail.
       #
       # @example
       #
-      #   Pa.delete_ext2("foo.txt", ".txt")      -> "foo"
+      #   Pa.delete_ext2("foo.txt", ".epub", ".txt")      -> "foo"
       #   Pa.delete_ext2("foo", ".txt")          -> "foo"
       #   Pa.delete_ext2("foo.epub", ".txt")     -> "foo.epub"
       #
-      def delete_ext2(path, ext)
+      def delete_ext2(path, *exts)
         p = get(path)
 
-        if has_ext?(p, ext)
-          p[0...p.rindex(ext)]
-        else
-          p
-        end
+        exts.each {|ext|
+          if has_ext?(p, ext)
+            return p[0...p.rindex(ext)]
+          end
+        }
+
+        p
       end
 
       # Ensure the tail
@@ -208,8 +209,8 @@ class Pa
 
     end
 
-    DELEGATE_METHODS2 = [ :parent2 ]
-    DELEGATE_METHODS = [ :parent]
+    DELEGATE_METHODS2 = [ :parent2, :delete_ext2, :add_ext2 ]
+    DELEGATE_METHODS = [ :parent, :delete_ext, :add_ext]
 
     DELEGATE_METHODS2.each do |mth2|
       class_eval <<-EOF

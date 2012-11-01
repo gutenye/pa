@@ -94,6 +94,13 @@ describe Pa do
     end
   end
 
+  describe ".head2" do
+    it do
+      expect(Pa.head2("/bar/foo.txt.tar")).to eq("/bar/foo.txt")
+      expect(Pa.head2("/bar/foo")).to eq("/bar/foo")
+    end
+  end
+
   describe "split2" do
     it "split a path into two part: dirname and basename" do
       expect(Pa.split2("/home/b/a.txt")).to eq(["/home/b", "a.txt"])

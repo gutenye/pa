@@ -171,6 +171,17 @@ class Pa
     def ext2(path)
       File.extname(get(path))
     end
+    
+    # Return path without ext.
+    #
+    #   Pa.head2("/foo/a.txt") -> "/foo/a")
+    #
+    def head2(path)
+      p = get(path)
+      ext = File.extname(p)
+
+      ext.empty? ? p : p[0...-ext.length]
+    end
 
       # => "ogg", ""
     def fext2(path)
@@ -251,7 +262,7 @@ class Pa
     end
   end
 
-  DELEGATE_ATTR_METHODS2 = [ :dir2, :dir_strict2, :base2, :name2, :ext2, :fext2]
+  DELEGATE_ATTR_METHODS2 = [ :dir2, :dir_strict2, :base2, :name2, :ext2, :fext2, :head2]
   DELEGATE_ATTR_METHODS = [ :absolute, :dir, :dir_strict, :rel, :rea ]
   DELEGATE_METHODS2 = [ :join2 ]
   DELEGATE_METHODS = [ :change, :join]
@@ -259,7 +270,7 @@ class Pa
   DELEGATE_TO_PATH = [:match, :start_with?, :end_with?]
 
 	attr_reader :path2
-  attr_reader :absolute2, :dir2, :dir_strict2, :base2, :name2, :short2, :ext2, :fext2, :rel2, :rea2
+  attr_reader :absolute2, :dir2, :dir_strict2, :base2, :name2, :short2, :ext2, :fext2, :head2, :rel2, :rea2
   attr_reader :options
 
   # @param [Hash] o option

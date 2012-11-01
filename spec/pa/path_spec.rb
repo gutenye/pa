@@ -81,6 +81,9 @@ describe Pa do
       expect(Pa.has_ext?("foo.txt", ".txt")).to be_true
       expect(Pa.has_ext?("foo", ".txt")).to be_false
       expect(Pa.has_ext?("foo.1txt", ".txt")).to be_false
+
+      expect(Pa.has_ext?("foo.txt", *%w[.epub .txt])).to be_true
+      expect(Pa.has_ext?("foo.txt", *%w[.epub .mobi])).to be_false
     end
   end
 
@@ -89,6 +92,9 @@ describe Pa do
       expect(Pa.delete_ext2("foo.txt", ".txt")).to eq("foo")
       expect(Pa.delete_ext2("foo", ".txt")).to eq("foo")
       expect(Pa.delete_ext2("foo.epub", ".txt")).to eq("foo.epub")
+
+      expect(Pa.delete_ext2("foo.txt", *%w[.epub .txt])).to eq("foo")
+      expect(Pa.delete_ext2("foo.txt", *%w[.epub .mobi])).to eq("foo.txt")
     end
   end
 

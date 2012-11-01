@@ -44,7 +44,7 @@ class Pa
       # @overload ln(src, dest)
       # @overload ln([src,..], directory)
       #
-      # @param [Array<String>, String] src_s support globbing
+      # @param [Array<String>, String] src_s 
       # @param [String,Pa] dest
       # @param [Hash] o
       # @option o [Boolean] :show_cmd puts cmd
@@ -94,7 +94,7 @@ class Pa
       # @option o [Boolean] :show_cmd puts cmd
       def cd(path=ENV["HOME"], o={}, &blk)
         p = get(path)
-        puts "cd #{p}" if (o[:verbose] or o[:show_cmd])
+        puts _wrap_cmd("cd #{p}", o[:show_cmd]) if (o[:verbose] or o[:show_cmd])
         Dir.chdir(p, &blk) 
       end
 
@@ -108,7 +108,7 @@ class Pa
       # @return [nil]
       def chroot(path, o={})
         p = get(path)
-        puts "chdroot #{p}" if (o[:verbose] or o[:show_cmd])
+        puts _wrap_cmd("chdroot #{p}", o[:show_cmd]) if (o[:verbose] or o[:show_cmd])
         Dir.chroot(p)
       end
 
@@ -178,7 +178,7 @@ class Pa
         (name,), o = Util.extract_options(args)
 
         p = _mktmpname(name, o)
-        puts "mktmpdir #{p}" if (o[:verbose] or o[:show_cmd])
+        puts _wrap_cmd("mktmpdir #{p}", o[:show_cmd]) if (o[:verbose] or o[:show_cmd])
 
         Dir.mkdir(p)
 
@@ -204,7 +204,7 @@ class Pa
         (name,), o = Util.extract_options(args)
 
         p = _mktmpname(name, o) 
-        puts "mktmpfile #{p}" if (o[:verbose] or o[:show_cmd])
+        puts _wrap_cmd("mktmpfile #{p}", o[:show_cmd]) if (o[:verbose] or o[:show_cmd])
 
         begin 
           blk.call(p) 
@@ -220,7 +220,7 @@ class Pa
         (name,), o = Util.extract_options(args)
 
         p = _mktmpname(name, o) 
-        puts "mktmpfile #{p}" if (o[:verbose] or o[:show_cmd])
+        puts _wrap_cmd("mktmpfile #{p}", o[:show_cmd]) if (o[:verbose] or o[:show_cmd])
 
         begin 
           blk.call(Pa(p)) 
@@ -234,16 +234,17 @@ class Pa
       # rm file only
       #
       # @overload rm(*paths, o={})
-      #   @param [String] *paths support globbing
+      #   @param [String] *paths
       #   @param o [Boolean] :verbose verbose mode
       #   @param o [Boolean] :show_cmd puts cmd
       # @return [nil]
       def rm(*paths)
         paths, o = Util.extract_options(paths)
         extra_doc = o[:force] ? "-f " : nil
-        puts "rm #{extra_doc}#{paths.join(" ")}" if o[:show_cmd]
+        puts _wrap_cmd("rm #{extra_doc}#{paths.join(' ')}", o[:show_cmd]) if o[:show_cmd]
 
-        Pa.glob(*paths) { |pa|
+        paths.each { |path|
+          pa = Pa(path)
           puts "rm #{extra_doc}#{pa.p}" if o[:verbose]
 
           if File.directory?(pa.p)
@@ -266,7 +267,7 @@ class Pa
 
       # rm directory only. still remove if directory is not empty.
       #
-      # @param [String] *paths support globbing
+      # @param [String] *paths
       # @param [Hash] o options
       # @option o [Boolean] :verbose verbose mode
       # @option o [Boolean] :show_cmd puts cmd
@@ -274,8 +275,9 @@ class Pa
       def rmdir(*paths)
         paths, o = Util.extract_options(paths)
         extra_doc = o[:force] ? "-f " : nil
-        puts "rmdir #{extra_doc}#{paths.join(" ")}" if o[:show_cmd]
-        Pa.glob(*paths) { |pa|
+        puts _wrap_cmd("rmdir #{extra_doc}#{paths.join(" ")}", o[:show_cmd]) if o[:show_cmd]
+        paths.each { |path|
+          pa = Pa(path)
           puts "  rmdir #{extra_doc}#{pa.p}" if o[:verbose]
 
           if not File.directory?(pa.p)
@@ -309,7 +311,7 @@ class Pa
       def empty_dir(*dirs)
         dirs, o = Util.extract_options(dirs)
         extra_doc = o[:force] ? "-f " : nil
-        puts "empty_dir #{extra_doc}#{dirs.join(" ")}" if o[:show_cmd]
+        puts _wrap_cmd("empty_dir #{extra_doc}#{dirs.join(" ")}", o[:show_cmd]) if o[:show_cmd]
 
         dirs.each {|dir|
           dir = Pa(dir)
@@ -335,8 +337,9 @@ class Pa
       # @return [nil]
       def rm_r(*paths)
         paths, o = Util.extract_options(paths)
-        puts "rm -r #{path.join(" ")}" if o[:show_cmd]
-        Pa.glob(*paths){ |pa|
+        puts _wrap_cmd("rm -r #{path.join(' ')}", o[:show_cmd]) if o[:show_cmd]
+        paths.each { |path|
+          pa = Pa(path)
           puts "rm -r #{pa.p}" if o[:verbose]
           File.directory?(pa.p)  ? _rmdir(pa) : File.delete(pa.p)
         }
@@ -350,14 +353,15 @@ class Pa
       #     pa.name == 'old'
       #   end
       #
-      # @param [String] *paths support globbing
+      # @param [String] *paths
       # @yield [path]
       # @yieldparam [Pa] path
       # @yieldreturn [Boolean] rm_r path if true
       # @return [nil]
       def rm_if(*paths, &blk)
         paths, o = Util.extract_options(paths)
-        Pa.glob(*paths) do |pa|
+        paths.each do |path|
+          pa = Pa(path)
           rm_r pa, o if blk.call(pa)
         end
       end
@@ -381,7 +385,7 @@ class Pa
       # default: preverse mode, not owner.
       #
       # @overload cp(src_s, dest, o)
-      #   @param [Array<String>, String] src_s support globbing
+      #   @param [Array<String>, String] src_s
       #   @param [String,Pa] dest
       #   @param [Hash] o option
       #   @option o [Boolean] :mkdir mkdir(dest) if dest not exists.
@@ -395,7 +399,7 @@ class Pa
       #   @yield [src,dest,o]
       #   @return [nil]
       def cp(src_s, dest, o={}, &blk)
-        srcs = Pa.glob(*Util.wrap_array(src_s)).map{|v| v.path}
+        srcs = Util.wrap_array(src_s).map{|v| Pa.get(v)}
         dest = Pa.get(dest)
         puts "cp #{srcs.join(" ")} #{dest}" if o[:show_cmd]
 
@@ -435,7 +439,7 @@ class Pa
       # @option o [Boolean] :fore
       # @return [nil]
       def mv(src_s, dest, o={}, &blk)
-        srcs = Pa.glob(*Util.wrap_array(src_s)).map{|v| get(v)}
+        srcs = Util.wrap_array(src_s).map{|v| get(v)}
         dest = get(dest)
 
         extra_doc = o[:force] ? "-f " : nil
@@ -475,6 +479,9 @@ class Pa
       # @param [String] dest
       def _move(src, dest, o)
         raise Errno::EEXIST, "dest exists -- #{dest}" if File.exists?(dest) and (not o[:force])
+
+        # move same file.
+        return if File.absolute_path(src) == File.absolute_path(dest)
 
         # :force. mv "dir", "dira" and 'dira' exists and is a directory. 
         if File.exists?(dest) and File.directory?(dest)
@@ -534,7 +541,7 @@ class Pa
         extra_doc << (o[:force] ? "-f " : "")
         puts "ln #{extra_doc}#{srcs.join(" ")} #{dest}" if o[:show_cmd]
 
-        Pa.glob(*srcs) {|src|
+        srcs.each {|src|
           src = get(src)
           dest = File.join(dest, File.basename(src)) if File.directory?(dest)
 
@@ -662,6 +669,16 @@ class Pa
             Pa(#{mth}2(*args, &blk))
           end
         EOF
+      end
+
+      # @private
+      def _wrap_cmd(cmd, pretty)
+        case pretty
+        when "$", "#"
+          "#{pretty} cmd"
+        else
+          cmd
+        end
       end
     end
   end
