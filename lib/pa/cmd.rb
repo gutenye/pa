@@ -675,7 +675,7 @@ class Pa
       def _wrap_cmd(cmd, pretty)
         case pretty
         when "$", "#"
-          "#{pretty} cmd"
+          "#{pretty} #{cmd}"
         else
           cmd
         end
