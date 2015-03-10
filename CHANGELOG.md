@@ -1,3 +1,9 @@
+## 1.4.x (xx)
+
+**Changes**
+
+  - `Pa.rm_rf` skip Errno::ENOENT
+
 ## 1.4.0 (Nov 4, 2012)
 
 **Changes**

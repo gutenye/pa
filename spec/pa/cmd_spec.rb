@@ -329,6 +329,10 @@ describe Pa do
       Pa.rm_r "dir"
       File.exists?("dir").should be_false
     end
+
+    it "doesn't raise Errno::ENOENT with :force" do
+      lambda{ Pa.rm_rf("doesnot_exists", :force => true) }.should_not raise_error(Errno::ENOENT) 
+    end
   end
 
   describe "#rm_if" do

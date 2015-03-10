@@ -185,7 +185,7 @@ class Pa
         begin 
           blk.call(p) 
         ensure 
-          Dir.delete(p) 
+          Dir.melete(p) 
         end if blk
 
         p
@@ -297,6 +297,56 @@ class Pa
         rmdir *paths, o
       end
       
+      
+      # rm recusive, rm both file and directory
+      #
+      # @see rm
+      # @return [nil]
+      def rm_r(*paths)
+        paths, o = Util.extract_options(paths)
+        puts _wrap_cmd("rm -r #{paths.join(' ')}", o[:show_cmd]) if o[:show_cmd]
+        paths.each { |path|
+          pa = Pa(path)
+          puts "rm -r #{pa.p}" if o[:verbose]
+
+          unless File.exists?(pa.p)
+            if o[:force]
+              next 
+            else 
+              raise Errno::ENOENT, "No such file or directory - #{pa.p}" 
+            end
+          end
+
+          File.directory?(pa.p)  ? _rmdir(pa, o) : File.delete(pa.p)
+        }
+      end
+
+      def rm_rf(*paths)
+        paths, o = Util.extract_options(paths)
+        o[:force] = true
+        rm_r *paths, o
+      end
+
+      # rm_if(path) if condition is true
+      #
+      # @example
+      #   Pa.rm_if '/tmp/**/*.rb' do |pa|
+      #     pa.name == 'old'
+      #   end
+      #
+      # @param [String] *paths
+      # @yield [path]
+      # @yieldparam [Pa] path
+      # @yieldreturn [Boolean] rm_r path if true
+      # @return [nil]
+      def rm_if(*paths, &blk)
+        paths, o = Util.extract_options(paths)
+        paths.each do |path|
+          pa = Pa(path)
+          rm_r pa, o if blk.call(pa)
+        end
+      end
+
       # empty a directory.
       #
       # @example
@@ -331,40 +381,6 @@ class Pa
         empty_dir *dirs, o
       end
       
-      # rm recusive, rm both file and directory
-      #
-      # @see rm
-      # @return [nil]
-      def rm_r(*paths)
-        paths, o = Util.extract_options(paths)
-        puts _wrap_cmd("rm -r #{path.join(' ')}", o[:show_cmd]) if o[:show_cmd]
-        paths.each { |path|
-          pa = Pa(path)
-          puts "rm -r #{pa.p}" if o[:verbose]
-          File.directory?(pa.p)  ? _rmdir(pa) : File.delete(pa.p)
-        }
-      end
-      alias rm_rf rm_r
-
-      # rm_if(path) if condition is true
-      #
-      # @example
-      #   Pa.rm_if '/tmp/**/*.rb' do |pa|
-      #     pa.name == 'old'
-      #   end
-      #
-      # @param [String] *paths
-      # @yield [path]
-      # @yieldparam [Pa] path
-      # @yieldreturn [Boolean] rm_r path if true
-      # @return [nil]
-      def rm_if(*paths, &blk)
-        paths, o = Util.extract_options(paths)
-        paths.each do |path|
-          pa = Pa(path)
-          rm_r pa, o if blk.call(pa)
-        end
-      end
 
       # copy
       #
